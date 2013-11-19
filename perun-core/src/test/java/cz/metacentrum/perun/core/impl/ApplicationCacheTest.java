@@ -33,7 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @author Cathy
  */
-public class ApplicationCacheTest {
+public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
     @Autowired
     	private AttributesManagerImpl attributesManagerImpl;
 
@@ -78,5 +78,7 @@ public class ApplicationCacheTest {
             Attribute attributeFromCache = new Attribute();
             attributeFromCache = attributesManagerImpl.getFromCache(user1, attribute1.getName());
             assertEquals(attribute1, attributeFromCache);
+            
+            
         }
 }
