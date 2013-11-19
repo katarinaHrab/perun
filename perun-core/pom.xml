@@ -157,7 +157,9 @@
 	    <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-dbcp</artifactId>
-        </dependency>
+	      <version>7.0.27</version>
+	      <type>jar</type>
+	    </dependency>
 
         <!-- SPRING -->
 
@@ -199,6 +201,9 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
+            <version>3.0.5.RELEASE</version>
+            <scope>test</scope>
+            <type>jar</type>
         </dependency>
 
         <!-- TEST -->
@@ -206,6 +211,9 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <version>4.5</version>
+            <scope>test</scope>
+            <type>jar</type>
         </dependency>
 
         <!-- LOGGING -->
@@ -296,7 +304,12 @@
             <artifactId>serviceloader-maven-plugin</artifactId>
             <version>1.0.2</version>
         </dependency>
-
+        <dependency>
+            <groupId>cz.metacentrum.perun</groupId>
+            <artifactId>perun-core</artifactId>
+            <version>devel-3.0.1-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
 
     <profiles>
