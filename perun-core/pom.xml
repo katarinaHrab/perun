@@ -157,8 +157,6 @@
 	    <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-dbcp</artifactId>
-	      <version>7.0.27</version>
-	      <type>jar</type>
 	    </dependency>
 
         <!-- SPRING -->
@@ -172,6 +170,8 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
+            <version>3.0.5.RELEASE</version>
+            <type>jar</type>
         </dependency>
 
         <!--
@@ -181,6 +181,8 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-jdbc</artifactId>
+            <version>3.0.5.RELEASE</version>
+            <type>jar</type>
         </dependency>
 
         <!--
@@ -329,9 +331,9 @@
             <version>1.0.2</version>
         </dependency>
         <dependency>
-            <groupId>cz.metacentrum.perun</groupId>
-            <artifactId>perun-core</artifactId>
-            <version>devel-3.0.1-SNAPSHOT</version>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>3.0.5.RELEASE</version>
             <type>jar</type>
         </dependency>
     </dependencies>

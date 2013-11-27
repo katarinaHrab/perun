@@ -21,6 +21,7 @@ import cz.metacentrum.perun.core.api.User;
 import cz.metacentrum.perun.core.api.UserExtSource;
 import cz.metacentrum.perun.core.api.Vo;
 import cz.metacentrum.perun.core.api.VosManager;
+import cz.metacentrum.perun.core.implApi.AttributesManagerImplApi;
 import java.util.HashMap;
 import java.util.List;
 import static junit.framework.Assert.assertEquals;
@@ -28,14 +29,17 @@ import junit.framework.TestCase;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
+
 import org.springframework.beans.factory.annotation.Autowired;
+
+
 /**
  *
  * @author Cathy
  */
 public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
-    @Autowired
-    	private AttributesManagerImpl attributesManagerImpl;
+        @Autowired
+    	protected AttributesManagerImplApi attributesManagerImpl;
 
         //World's variables
         private User user1;
@@ -44,6 +48,16 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
         private Attribute attribute1;
         private Attribute attribute2;
         private Attribute attribute3;
+
+    public AttributesManagerImplApi getAttributesManagerImplApi() {
+        return attributesManagerImpl;
+    }
+
+    public void setAttributesManagerImplApi(AttributesManagerImplApi attributesManagerImpl) {
+        this.attributesManagerImpl = attributesManagerImpl;
+    }
+
+    
         
     @Before
 	public void setUp() throws Exception {
@@ -78,7 +92,8 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             Attribute attributeFromCache = new Attribute();
             attributeFromCache = attributesManagerImpl.getFromCache(user1, attribute1.getName());
             assertEquals(attribute1, attributeFromCache);
-            
-            
-        }
+         }
+    
+  //  @Test
+    //    public void 
 }

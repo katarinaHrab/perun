@@ -37,6 +37,12 @@ import cz.metacentrum.perun.core.implApi.modules.attributes.UserVirtualAttribute
  */
 public interface AttributesManagerImplApi {
 
+    void addToCache(User user, Attribute attribute);
+    
+    void removeFromCache(User user, AttributeDefinition attribute);
+
+    Attribute getFromCache(User user, String attributeName);
+    
   /**
    * Get all <b>non-empty</b> attributes associated with the facility.
    * 
