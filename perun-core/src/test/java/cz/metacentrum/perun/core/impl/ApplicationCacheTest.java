@@ -22,6 +22,7 @@ import cz.metacentrum.perun.core.api.UserExtSource;
 import cz.metacentrum.perun.core.api.Vo;
 import cz.metacentrum.perun.core.api.VosManager;
 import cz.metacentrum.perun.core.implApi.AttributesManagerImplApi;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import static junit.framework.Assert.assertEquals;
@@ -94,6 +95,20 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             assertEquals(attribute1, attributeFromCache);
          }
     
-  //  @Test
-    //    public void 
+    @Test
+        public void removeFromCacheTest() {
+            System.out.println("attributesManagerImpl.removeFromCacheTest");
+            attributesManagerImpl.addToCache(user1, attribute1);
+            attributesManagerImpl.removeFromCache(user1, attribute1);
+            assertEquals(null, attributesManagerImpl.getFromCache(user1, attribute1.getName()));
+    }
+    
+    @Test
+        public void addMoreAttributesToOneUserTest() {
+            System.out.println("attributesManagerImpl.addMoreAttributesToOneUserTest");
+            attributesManagerImpl.addToCache(user1, attribute1);
+            attributesManagerImpl.addToCache(user1, attribute2);
+            assertEquals(attribute1, attributesManagerImpl.getFromCache(user1, attribute1.getName()));
+            assertEquals(attribute2, attributesManagerImpl.getFromCache(user1, attribute2.getName()));
+    }
 }
