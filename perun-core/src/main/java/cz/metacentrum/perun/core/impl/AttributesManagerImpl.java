@@ -153,7 +153,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
         }
         Map<String,Attribute> mapOfUserAttributes = new HashMap<String,Attribute>();
         mapOfUserAttributes = cacheByUserAndName.get(user);
-        Attribute attribute = new Attribute(mapOfUserAttributes.get(attributeName));
+        Attribute attribute = mapOfUserAttributes.get(attributeName);
         return attribute;
     }
 
