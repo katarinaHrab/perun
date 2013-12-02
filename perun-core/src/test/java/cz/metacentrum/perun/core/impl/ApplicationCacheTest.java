@@ -121,5 +121,4 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             assertEquals(attribute2, attributesManagerImpl.getFromCache(user2, attribute2.getName()));
     }
     
-    
 }
