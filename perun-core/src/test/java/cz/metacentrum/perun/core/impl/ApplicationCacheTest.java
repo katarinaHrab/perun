@@ -121,4 +121,12 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             assertEquals(attribute2, attributesManagerImpl.getFromCache(user2, attribute2.getName()));
     }
     
+    @Test
+        public void consistencyOfObjectTest() {
+            System.out.println("attributesManagerImpl.consistencyOfObjectTest");
+            attributesManagerImpl.addToCache(user1, attribute1);
+            attributesManagerImpl.getFromCache(user1, attribute1.getName()).setFriendlyName("name2");
+            String attributeName = attributesManagerImpl.getFromCache(user1, attribute1.getName()).getFriendlyName();
+            assertEquals(attribute1.getFriendlyName(), attributeName);
+    }
 }
