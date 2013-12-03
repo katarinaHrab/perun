@@ -98,6 +98,7 @@ import cz.metacentrum.perun.core.implApi.modules.attributes.UserAttributesModule
 import cz.metacentrum.perun.core.implApi.modules.attributes.UserVirtualAttributesModuleImplApi;
 import cz.metacentrum.perun.core.implApi.modules.attributes.VirtualAttributesModuleImplApi;
 import cz.metacentrum.perun.core.implApi.modules.attributes.VoAttributesModuleImplApi;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
@@ -153,8 +154,10 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
         }
         Map<String,Attribute> mapOfUserAttributes = new HashMap<String,Attribute>();
         mapOfUserAttributes = cacheByUserAndName.get(user);
-        Attribute attribute = new Attribute();
-        attribute = mapOfUserAttributes.get(attributeName);
+        if (mapOfUserAttributes.get(attributeName) == null) {
+            return null;
+        }
+        Attribute attribute = new Attribute(mapOfUserAttributes.get(attributeName));
         return attribute;
     }
 
