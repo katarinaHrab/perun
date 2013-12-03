@@ -98,6 +98,7 @@ import cz.metacentrum.perun.core.implApi.modules.attributes.UserAttributesModule
 import cz.metacentrum.perun.core.implApi.modules.attributes.UserVirtualAttributesModuleImplApi;
 import cz.metacentrum.perun.core.implApi.modules.attributes.VirtualAttributesModuleImplApi;
 import cz.metacentrum.perun.core.implApi.modules.attributes.VoAttributesModuleImplApi;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
@@ -129,6 +130,16 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     
     private Map<User,Map<String,Attribute>> cacheByUserAndName = new HashMap<User,Map<String,Attribute>>();
     
+    
+    public Map<User,Map<String,Attribute>> getCacheByUserAndName() {
+        return Collections.unmodifiableMap(cacheByUserAndName);
+    }
+    
+    public void flushCache() {
+        cacheByUserAndName.clear();
+    }
+    
+    
     public void addToCache(User user, Attribute attribute) {
         if (cacheByUserAndName.get(user)!=null) {
             cacheByUserAndName.get(user).put(attribute.getName(), attribute);
@@ -153,7 +164,10 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
         }
         Map<String,Attribute> mapOfUserAttributes = new HashMap<String,Attribute>();
         mapOfUserAttributes = cacheByUserAndName.get(user);
-        Attribute attribute = mapOfUserAttributes.get(attributeName);
+        if (mapOfUserAttributes.get(attributeName) == null) {
+            return null;
+        }
+        Attribute attribute = new Attribute(mapOfUserAttributes.get(attributeName));
         return attribute;
     }
 

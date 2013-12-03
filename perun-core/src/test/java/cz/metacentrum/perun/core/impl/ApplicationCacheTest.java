@@ -26,7 +26,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
 import junit.framework.TestCase;
+import org.junit.After;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,14 +78,22 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
                 attribute1 = new Attribute();
                 attribute1.setNamespace(AttributesManager.NS_USER_ATTR_DEF);
                 attribute1.setFriendlyName("name1");
+                attribute1.setValue(1);
                 
                 attribute2 = new Attribute();
                 attribute2.setNamespace(AttributesManager.NS_USER_ATTR_DEF);
                 attribute2.setFriendlyName("name2");
+                attribute2.setValue(2);
                 
                 attribute3 = new Attribute();
                 attribute3.setNamespace(AttributesManager.NS_USER_ATTR_DEF);
                 attribute3.setFriendlyName("name3");
+                attribute3.setValue(3);
+    }
+    
+    @After
+    public void tearDown() {
+        attributesManagerImpl.flushCache();
     }
     
     @Test
@@ -128,5 +138,15 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             attributesManagerImpl.getFromCache(user1, attribute1.getName()).setFriendlyName("name2");
             String attributeName = attributesManagerImpl.getFromCache(user1, attribute1.getName()).getFriendlyName();
             assertEquals(attribute1.getFriendlyName(), attributeName);
+    }
+    
+    @Test
+        public void updateOfAttributeWithDiffValue() {
+            System.out.println("attributesManagerImpl.updateOfAttributeWithDiffValue");
+            attributesManagerImpl.addToCache(user1, attribute1);
+            attribute1.setValue(123);
+            attributesManagerImpl.addToCache(user1, attribute1);
+            assertEquals(123, attributesManagerImpl.getFromCache(user1, attribute1.getName()).getValue());
+            assertEquals(1, attributesManagerImpl.getCacheByUserAndName().get(user1).size());
     }
 }
