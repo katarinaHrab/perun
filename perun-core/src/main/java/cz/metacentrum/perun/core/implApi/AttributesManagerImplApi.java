@@ -29,6 +29,7 @@ import cz.metacentrum.perun.core.api.exceptions.WrongAttributeValueException;
 import cz.metacentrum.perun.core.api.exceptions.WrongModuleTypeException;
 import cz.metacentrum.perun.core.api.exceptions.WrongReferenceAttributeValueException;
 import cz.metacentrum.perun.core.implApi.modules.attributes.UserVirtualAttributesModuleImplApi;
+import java.util.Map;
 
 /**
  * @author Michal Prochazka <michalp@ics.muni.cz>
@@ -36,13 +37,17 @@ import cz.metacentrum.perun.core.implApi.modules.attributes.UserVirtualAttribute
  * @version $Id: 392235f34ef408a43997e1682f2229562a1a1e8e $
  */
 public interface AttributesManagerImplApi {
-
+    
+    Map<User,Map<String,Attribute>> getCacheByUserAndName();
+    
+    void flushCache();
+    
     void addToCache(User user, Attribute attribute);
     
     void removeFromCache(User user, AttributeDefinition attribute);
 
     Attribute getFromCache(User user, String attributeName);
-    
+
   /**
    * Get all <b>non-empty</b> attributes associated with the facility.
    * 
