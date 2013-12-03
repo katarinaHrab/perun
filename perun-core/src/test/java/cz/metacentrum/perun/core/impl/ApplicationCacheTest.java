@@ -40,7 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
         @Autowired
-    	protected AttributesManagerImplApi attributesManagerImpl;
+            protected AttributesManagerImplApi attributesManagerImpl;
 
         //World's variables
         private User user1;
@@ -61,7 +61,7 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
     
         
     @Before
-	public void setUp() throws Exception {
+        public void setUp() throws Exception {
             this.setUpWorld();
     }
     
@@ -76,14 +76,17 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
                 attribute1 = new Attribute();
                 attribute1.setNamespace(AttributesManager.NS_USER_ATTR_DEF);
                 attribute1.setFriendlyName("name1");
+                attribute1.setValue(1);
                 
                 attribute2 = new Attribute();
                 attribute2.setNamespace(AttributesManager.NS_USER_ATTR_DEF);
                 attribute2.setFriendlyName("name2");
+                attribute2.setValue(2);
                 
                 attribute3 = new Attribute();
                 attribute3.setNamespace(AttributesManager.NS_USER_ATTR_DEF);
                 attribute3.setFriendlyName("name3");
+                attribute3.setValue(3);
     }
     
     @Test
@@ -125,7 +128,12 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
         public void consistencyOfObjectTest() {
             System.out.println("attributesManagerImpl.consistencyOfObjectTest");
             attributesManagerImpl.addToCache(user1, attribute1);
-            attributesManagerImpl.getFromCache(user1, attribute1.getName()).setFriendlyName("name2");
+            Attribute attr = new Attribute();
+            attr = attributesManagerImpl.getFromCache(user1, attribute1.getName());
+            attr.setFriendlyName("name2");
+            System.out.println(attributesManagerImpl.getFromCache(user1, attribute1.getName()).getFriendlyName());
+            System.out.println(attribute1.getFriendlyName());
+            System.out.println(attr.getFriendlyName());
             String attributeName = attributesManagerImpl.getFromCache(user1, attribute1.getName()).getFriendlyName();
             assertEquals(attribute1.getFriendlyName(), attributeName);
     }
