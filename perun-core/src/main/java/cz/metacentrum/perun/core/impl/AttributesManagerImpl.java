@@ -128,39 +128,6 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     private ClassLoader classLoader = this.getClass().getClassLoader();
     private NamedParameterJdbcTemplate  namedParameterJdbcTemplate;
     
-    private Map<User,Map<String,Attribute>> cacheByUserAndName = new HashMap<User,Map<String,Attribute>>();
-    
-    public void addToCache(User user, Attribute attribute) {
-        if (cacheByUserAndName.get(user)!=null) {
-            cacheByUserAndName.get(user).put(attribute.getName(), attribute);
-        }
-        else {
-            Map<String,Attribute> mapOfUserAttributes = new HashMap<String,Attribute>();
-            mapOfUserAttributes.put(attribute.getName(), attribute);
-            cacheByUserAndName.put(user, mapOfUserAttributes);
-        }
-    }
-    
-    public void removeFromCache(User user, AttributeDefinition attribute) {
-        if (cacheByUserAndName.get(user)==null) {
-            throw new NullPointerException("User is not in cache.");
-        }
-        cacheByUserAndName.get(user).remove(attribute.getName());
-    }
-
-    public Attribute getFromCache(User user, String attributeName) {
-        if (cacheByUserAndName.get(user)==null) {
-            throw new NullPointerException("User is not in cache.");
-        }
-        Map<String,Attribute> mapOfUserAttributes = new HashMap<String,Attribute>();
-        mapOfUserAttributes = cacheByUserAndName.get(user);
-        if (mapOfUserAttributes.get(attributeName) == null) {
-            return null;
-        }
-        Attribute attribute = new Attribute(mapOfUserAttributes.get(attributeName));
-        return attribute;
-    }
-
     //Attributes modules.  name => module
     private Map<String, AttributesModuleImplApi> attributesModulesMap = new ConcurrentHashMap<String, AttributesModuleImplApi>();
 
