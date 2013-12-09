@@ -14,7 +14,7 @@ http://www.springframework.org/schema/util http://www.springframework.org/schema
     <import resource="classpath:perun-beans.xml"/>
     <import resource="classpath:perun-transaction-manager.xml"/>
 
-   <!-- Enable @Transactional support -->
+    <!-- Enable @Transactional support -->
     <tx:annotation-driven transaction-manager="perunTransactionManager"/>
 
     <!-- Enable @AspectJ support -->
@@ -31,14 +31,25 @@ http://www.springframework.org/schema/util http://www.springframework.org/schema
     <bean id="registrarManager" class="cz.metacentrum.perun.registrar.impl.RegistrarManagerImpl" init-method="initialize">
         <property name="dataSource" ref="dataSource"/>
         <property name="shibDisplayNameVar" value="Shib-Person-displayName"/>
+        <property name="registrarManager" ref="registrarManager"/>
     </bean>
-    
+
     <bean id="mailManager" class="cz.metacentrum.perun.registrar.impl.MailManagerImpl" init-method="initialize">
         <property name="dataSource" ref="dataSource"/>
         <property name="mailSender" ref="mailSender" />
     </bean>
 
     <!-- Properties Bean -->
-    <util:properties id="registrarProperties" location="file:${perun.conf}/perun-registrar-lib.properties" />
+    <bean id="registrarProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="locations">
+            <list>
+                <value>file:${perun.conf}/perun-registrar-lib.properties</value>
+                <value>file:${perun.conf.custom}/perun-registrar-lib.properties</value>
+            </list>
+        </property>
+        <property name="ignoreResourceNotFound">
+            <value>true</value>
+        </property>
+    </bean>
 
 </beans>

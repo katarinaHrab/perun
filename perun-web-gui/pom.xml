@@ -27,6 +27,7 @@
         <!-- Convenience property to set the GWT version -->
         <gwtVersion>2.5.1</gwtVersion>
         <webappDirectory>${project.build.directory}/${project.build.finalName}</webappDirectory>
+        <gui.url.modifier></gui.url.modifier>
     </properties>
 
     <!-- common build settings used by all profiles -->
@@ -192,6 +193,15 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Drag and Drop library
+        <dependency>
+            <groupId>com.googlecode.gwtquery.bundles</groupId>
+            <artifactId>gquery-dnd-bundle</artifactId>
+            <version>1.0.6</version>
+            <scope>provided</scope>
+        </dependency>
+        -->
+
     </dependencies>
 
     <profiles>
@@ -199,6 +209,11 @@
         <profile>
 
             <id>production</id>
+
+            <properties>
+                <perun.build.type>production</perun.build.type>
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
 
             <build>
 
@@ -246,5 +261,14 @@
         </profile>
 
     </profiles>
+
+    <!-- uncomment for drag and drop
+    <repositories>
+        <repository>
+            <id>plugins</id>
+            <url>http://gwtquery-plugins.googlecode.com/svn/mavenrepo</url>
+        </repository>
+    </repositories>
+    -->
 
 </project>

@@ -369,11 +369,10 @@ public class ApplicationFormPage extends ApplicationPage {
 			ft.getFlexCellFormatter().setHorizontalAlignment(0, 0, HasHorizontalAlignment.ALIGN_CENTER);
 			ft.getFlexCellFormatter().setVerticalAlignment(0, 0, HasVerticalAlignment.ALIGN_MIDDLE);
 			bodyContents.add(ft);
-			
-			String target = Location.getParameter("targetnew");
-			if (target != null && !target.isEmpty()) {
-				Location.replace(Location.getParameter("targetnew"));
-			}
+
+            if (Location.getParameter("targetnew") != null) {
+                Location.replace(Location.getParameter("targetnew"));
+            }
 			
 		} else if (type.equalsIgnoreCase("EXTENSION")) {
 			
@@ -388,16 +387,14 @@ public class ApplicationFormPage extends ApplicationPage {
 			
 			if (autoApproval) {
 				// automatically extended
-				String target = Location.getParameter("targetextended");
-				if (target != null && !target.isEmpty()) {
-					Location.replace(Location.getParameter("targetextended"));
-				}
+                if (Location.getParameter("targetextended") != null) {
+                    Location.replace(Location.getParameter("targetextended"));
+                }
 			} else {
 				// TODO - only when user have valid account
-				String target = Location.getParameter("targetexisting");
-				if (target != null && !target.isEmpty()) {
-					Location.replace(Location.getParameter("targetexisting"));
-				}
+                if (Location.getParameter("targetexisting") != null) {
+                    Location.replace(Location.getParameter("targetexisting"));
+                }
 			}
 			
 		}
@@ -415,12 +412,12 @@ public class ApplicationFormPage extends ApplicationPage {
 			bodyContents.clear();
 			FlexTable ft = new FlexTable();
 			ft.setSize("100%", "300px");
-            if (error.getName().equalsIgnoreCase("EmptyPasswordRuntimeException")) {
-                // empty password - application WAS NOT SAVED
+            if (error.getName().equalsIgnoreCase("ApplicationNotCreatedException")) {
+                // application WAS NOT SAVED
                 ft.setHTML(0, 0, new Image(LargeIcons.INSTANCE.errorIcon())+"<h2>" + ApplicationMessages.INSTANCE.errorWhileCreatingApplication() + "</h2>" +
                         "<p><strong>" + ApplicationMessages.INSTANCE.errorWhileCreatingApplicationMessage() + "</strong></p>");
             } else {
-                // some error - application WAS SAVED
+                // some minor error - application WAS SAVED
                 ft.setHTML(0, 0, new Image(LargeIcons.INSTANCE.errorIcon())+"<h2>" + ApplicationMessages.INSTANCE.errorWhileCreatingApplication() + "</h2>" +
                         "<p><strong>" + ApplicationMessages.INSTANCE.voAdministratorWasNotified() + "</strong>"+
                         "<p>" + ApplicationMessages.INSTANCE.ifEmailProvidedCheckInbox() + "</p>");

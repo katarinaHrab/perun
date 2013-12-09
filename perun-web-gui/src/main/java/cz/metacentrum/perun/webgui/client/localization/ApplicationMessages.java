@@ -70,7 +70,7 @@ public interface ApplicationMessages extends Messages {
 	@DefaultMessage("Error occurred when processing your application.")
 	String errorWhileCreatingApplication();
 
-    @DefaultMessage("Empty passwords are not allowed! Application was not saved. You must fill new application to re-try.")
+    @DefaultMessage("Login/password reservation failed in external system. Your application was not saved. Please contact support to resolve this issue before new application submission.")
     String errorWhileCreatingApplicationMessage();
 
 	@DefaultMessage("VO administrator has been notified about all errors.")
@@ -144,6 +144,9 @@ public interface ApplicationMessages extends Messages {
 	
 	@DefaultMessage("<h2>VO does not have application form defined.</h2>")
 	String noFormDefined();
+
+    @DefaultMessage("<h2>You are already member of VO.</h2>")
+    String alreadyVoMember();
 	
 	@DefaultMessage("Membership in group {0} cannot be extended. It last as long as membership in VO {1}.")
 	String groupMembershipCantBeExtended(String groupName, String voName);

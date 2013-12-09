@@ -19,7 +19,7 @@ import static cz.metacentrum.perun.registrar.model.Application.AppType;
  * Perun Registrar API.
  *
  * @author Martin Kuba makub@ics.muni.cz
- * @version $Id$
+ * @version $Id: dee17e9f6ff7127b81c945a25a123e6a1ca8e82b $
  */
 @SuppressWarnings("UnusedDeclaration")
 public interface RegistrarManager {
@@ -167,15 +167,26 @@ public interface RegistrarManager {
     List<ApplicationFormItemWithPrefilledValue> getFormItemsWithPrefilledValues(PerunSession sess, AppType appType, ApplicationForm form) throws PerunException;
 
     /**
-     * Creates a new application.
+     * Creates a new application and if succeeds, trigger validation and approval.
      *
      * <p>The method triggers approval for VOs with auto-approved applications.
+     *
      * @param user user present in session
      * @param application application
      * @param data data
      * @return stored app data
      */
     List<ApplicationFormItemData> createApplication(PerunSession user, Application application, List<ApplicationFormItemData> data) throws PerunException;
+
+    /**
+     * Creates a new application in one transaction
+     *
+     * @param user user present in session
+     * @param application application
+     * @param data data
+     * @return stored app data
+     */
+    Application createApplicationInternal(PerunSession user, Application application, List<ApplicationFormItemData> data) throws PerunException;
 
     /**
      * Delete application by Id. Application must be in state: NEW or REJECTED.
@@ -242,6 +253,14 @@ public interface RegistrarManager {
      * @param appId application id
      */
     Application approveApplication(PerunSession session, int appId) throws PerunException;
+
+    /**
+     * Approves an application in one transaction.
+     *
+     * @param session who approves the application
+     * @param appId application id
+     */
+    Application approveApplicationInternal(PerunSession session, int appId) throws PerunException;
 
     /**
      * Manually rejects an application. Expected to be called as a result of direct VO administrator action in the web UI.
