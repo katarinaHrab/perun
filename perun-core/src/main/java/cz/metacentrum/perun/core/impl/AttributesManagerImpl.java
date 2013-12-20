@@ -128,7 +128,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     private ClassLoader classLoader = this.getClass().getClassLoader();
     private NamedParameterJdbcTemplate  namedParameterJdbcTemplate;
     
+<<<<<<< HEAD
     private Map<User,Map<String,Attribute>> cacheByUserAndName = new HashMap<User,Map<String,Attribute>>();
+=======
+
+    private Map<User,Map<String,Attribute>> cacheByUserAndName = new ConcurrentHashMap<>();
+>>>>>>> 9757be7... Synchronized map of cache and implementation of cache methods.
     
     
     public Map<User,Map<String,Attribute>> getCacheByUserAndName() {
@@ -145,7 +150,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
             cacheByUserAndName.get(user).put(attribute.getName(), attribute);
         }
         else {
-            Map<String,Attribute> mapOfUserAttributes = new HashMap<String,Attribute>();
+            Map<String,Attribute> mapOfUserAttributes = new HashMap<>();
             mapOfUserAttributes.put(attribute.getName(), attribute);
             cacheByUserAndName.put(user, mapOfUserAttributes);
         }
@@ -162,7 +167,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
         if (cacheByUserAndName.get(user)==null) {
             throw new NullPointerException("User is not in cache.");
         }
-        Map<String,Attribute> mapOfUserAttributes = new HashMap<String,Attribute>();
+        Map<String,Attribute> mapOfUserAttributes = new HashMap<>();
         mapOfUserAttributes = cacheByUserAndName.get(user);
         if (mapOfUserAttributes.get(attributeName) == null) {
             return null;
@@ -1129,6 +1134,10 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 
     public Attribute getAttribute(PerunSession sess, User user, String attributeName) throws InternalErrorException, AttributeNotExistsException {
       //user and user core attributes
+      Attribute attribute = getFromCache(user, attributeName);
+      if (attribute != null) {
+          return attribute;
+      }
       try {
         return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("usr") + " from attr_names " + 
                                    "left join      user_attr_values    usr    on      id=usr.attr_id    and   user_id=? " + 
@@ -3538,7 +3547,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAttribute(PerunSession sess, User user, AttributeDefinition attribute) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from user_attr_values where attr_id=? and user_id=?", attribute.getId(), user.getId())) {
-          log.info("Attribute (its value) was removed from user. Attribute={}, user={}", attribute, user); 
+          log.info("Attribute (its value) was removed from user. Attribute={}, user={}", attribute, user);
+          removeFromCache(user, attribute);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
