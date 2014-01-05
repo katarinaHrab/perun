@@ -77,7 +77,7 @@ public interface AttributesManagerImplApi {
    * @author Katarina Hrabovska
    * @param user user to get attribute of
    * @param attributeName name of attribute
-   * @return attribute 
+   * @return attribute, null if user or attribute is not in cache
    */ 
     Attribute getFromCache(User user, String attributeName);
 

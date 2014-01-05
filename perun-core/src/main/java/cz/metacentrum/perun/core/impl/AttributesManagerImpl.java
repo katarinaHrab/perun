@@ -127,14 +127,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     private LobHandler lobHandler;
     private ClassLoader classLoader = this.getClass().getClassLoader();
     private NamedParameterJdbcTemplate  namedParameterJdbcTemplate;
-    
-<<<<<<< HEAD
+   
     private Map<User,Map<String,Attribute>> cacheByUserAndName = new HashMap<User,Map<String,Attribute>>();
-=======
-
-    private Map<User,Map<String,Attribute>> cacheByUserAndName = new ConcurrentHashMap<>();
->>>>>>> 9757be7... Synchronized map of cache and implementation of cache methods.
-    
     
     public Map<User,Map<String,Attribute>> getCacheByUserAndName() {
         return Collections.unmodifiableMap(cacheByUserAndName);
@@ -157,15 +151,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     }
     
     public void removeFromCache(User user, AttributeDefinition attribute) {
-        if (cacheByUserAndName.get(user)==null) {
-            throw new NullPointerException("User is not in cache.");
+        if (cacheByUserAndName.get(user)!=null) {
+           cacheByUserAndName.get(user).remove(attribute.getName());
         }
-        cacheByUserAndName.get(user).remove(attribute.getName());
     }
 
     public Attribute getFromCache(User user, String attributeName) {
         if (cacheByUserAndName.get(user)==null) {
-            throw new NullPointerException("User is not in cache.");
+            return null;
         }
         Map<String,Attribute> mapOfUserAttributes = new HashMap<>();
         mapOfUserAttributes = cacheByUserAndName.get(user);
@@ -2162,14 +2155,19 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           if(attribute.getValue() == null) {
               int numAffected = jdbc.update("delete from user_attr_values where attr_id=? and user_id=?", attribute.getId(), user.getId());
               if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from user_attr_values where attr_id="+ attribute.getId() +" and user_id=" + user.getId());
-              return numAffected == 1;
+              if (numAffected == 1) {
+                  addToCache(user, attribute);
+                  return true;
+              }
+              return false;
           }
           int repetatCounter = 0;
-          while(true) {
+          boolean pom = true;
+          while(pom) {
             try {  
                 if(Compatibility.isMergeSupported()) {
                   //TODO return false when attr_value_text is not changed
-                      return 0 < jdbc.execute("merge into user_attr_values using dual on (attr_id=? and user_id=?) " +
+                      if (0 < jdbc.execute("merge into user_attr_values using dual on (attr_id=? and user_id=?) " +
                                               "when not matched   then insert (attr_id, user_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " + 
                                               "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)" +
                                               "when matched       then update set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate(), 
@@ -2193,7 +2191,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                   }
                                                 }
                                               }
-                      );
+                      )) {
+                          addToCache(user, attribute);
+                          return true;
+                      }
+                      return false;
                 } else {
                     try {
                         jdbc.queryForInt("select attr_id from user_attr_values where attr_id=? and user_id=? for update", attribute.getId(), user.getId());
@@ -2202,12 +2204,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                         jdbc.update("insert into user_attr_values (attr_id, user_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                 "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), user.getId(), BeansUtils.attributeValueToString(attribute),
                                 sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
-                        return true;
+                        pom = false;
                     }
                     //Exception wasn't thrown -> update
                     jdbc.update("update user_attr_values set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and user_id=?",
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), user.getId());
-                    return true;
+                    pom = false;
                   //throw new InternalErrorException("Set large attribute isn't supported yet for databases without merge statement supported.");
                 }
             } catch(DataIntegrityViolationException ex) {
@@ -2216,12 +2218,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
               } catch(InterruptedException IGNORE) { }
             }
-          }        
+          }     //end of while 
+          addToCache(user, attribute);
+          return true;
         } else {
           if(attribute.getValue() == null) {
             int numAffected = jdbc.update("delete from user_attr_values where attr_id=? and user_id=?", attribute.getId(), user.getId());
             if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from user_attr_values where attr_id="+ attribute.getId() +" and user_id=" + user.getId());
-            return numAffected == 1;
+            if (numAffected == 1) {
+                addToCache(user, attribute);
+                return true;
+            }
+            return false;
           }
           try {
               Object value = BeansUtils.stringToAttributeValue(jdbc.queryForObject("select attr_value from user_attr_values where attr_id=? and user_id=?", String.class, attribute.getId(), user.getId()), attribute.getType());
@@ -2231,7 +2239,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           }
           
           int repetatCounter = 0;
-          while(true) {
+          boolean pom = true;
+          while(pom) {
             try { 
                 if(Compatibility.isMergeSupported()) {
                       jdbc.update("merge into user_attr_values using dual on (attr_id=? and user_id=?) " +
@@ -2243,7 +2252,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                              sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId(),
                                              BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId()
                       );
-                      return true;
+                      pom = false;
                 } else {
                     try {
                       jdbc.queryForInt("select attr_id from user_attr_values where attr_id=? and user_id=? for update", attribute.getId(), user.getId());
@@ -2252,12 +2261,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                       jdbc.update("insert into user_attr_values (attr_id, user_id, attr_value, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " + 
                           "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), user.getId(), BeansUtils.attributeValueToString(attribute),
                           sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId()); 
-                      return true;
+                      pom = false;
                     }
                     //Exception wasn't thrown -> update
                     jdbc.update("update user_attr_values set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and user_id=?",
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), user.getId());
-                    return true;
+                    pom = false;
                 }
             } catch(DataIntegrityViolationException ex) {
                 if(++repetatCounter > MERGE_TRY_CNT) throw new InternalErrorException("SQL merger (or other UPSERT command) failed more than " + MERGE_TRY_CNT + " times.", ex);
@@ -2265,7 +2274,9 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
               } catch(InterruptedException IGNORE) { }
             }
-          }    
+          }  //end of while 
+        addToCache(user, attribute);
+        return true;
         }
       } catch (RuntimeException e) {
         throw new InternalErrorException(e);
