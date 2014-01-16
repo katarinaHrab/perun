@@ -623,16 +623,34 @@ public enum ServicesManagerMethod implements ManagerMethod {
      * @param type String Type
      * @return Destination Created destination.
      */
+    /*#
+     * Adds an destination for a facility and list of services. Destination.id doesn't need to be filled. If destination doesn't exist it will be created.
+     *
+     * @param services List<Service> Services
+     * @param facility int Facility ID
+     * @param destination String Destination
+     * @param type String Type
+     * @return Destination Created destination.
+     */
     addDestination {
 
       @Override
       public Destination call(ApiCaller ac, Deserializer parms) throws PerunException {
         ac.stateChangingCheck();
+        
+        if(parms.contains("services")) {
+            return ac.getServicesManager().addDestination(ac.getSession(),
+                parms.readList("services", Service.class),
+                ac.getFacilityById(parms.readInt("facility")),
+                ac.getDestination(parms.readString("destination"), parms.readString("type")));
+        } else {
+            return ac.getServicesManager().addDestination(ac.getSession(),
+                ac.getServiceById(parms.readInt("service")),
+                ac.getFacilityById(parms.readInt("facility")),
+                ac.getDestination(parms.readString("destination"), parms.readString("type")));
+        }
 
-        return ac.getServicesManager().addDestination(ac.getSession(),
-            ac.getServiceById(parms.readInt("service")),
-            ac.getFacilityById(parms.readInt("facility")),
-            ac.getDestination(parms.readString("destination"), parms.readString("type")));
+        
       }
     },
     
@@ -675,6 +693,53 @@ public enum ServicesManagerMethod implements ManagerMethod {
       }
     },
     
+    /*#
+     * Add services destinations for all services currently available on facility
+     * (assigned to all facility's resources). Destinations names are taken from
+     * all facility's host hostnames.
+     * 
+     * @param service int Service ID
+     * @param facility int Facility ID
+     * @return List<Destinations> Added destinations
+     */
+    /*#
+     * Add services destinations for list of services. Destinations names are taken from
+     * all facility's host hostnames.
+     *
+     * @param services List<Service> Services
+     * @param facility int Facility ID
+     * @return List<Destinations> Added destinations
+     */
+    /*#
+     * Add services destinations for one service. Destinations names are taken from
+     * all facility's host hostnames.
+     *
+     * @param service int Service ID
+     * @param facility int Facility ID
+     * @return List<Destinations> Added destinations
+     */
+    addDestinationsDefinedByHostsOnFacility {
+        
+      @Override
+      public List<Destination> call(ApiCaller ac, Deserializer parms) throws PerunException {
+        ac.stateChangingCheck();
+
+        if(parms.contains("service")) {
+            return ac.getServicesManager().addDestinationsDefinedByHostsOnFacility(ac.getSession(),
+            ac.getServiceById(parms.readInt("service")),
+            ac.getFacilityById(parms.readInt("facility")));
+        } else if (parms.contains("services")) {
+            return ac.getServicesManager().addDestinationsDefinedByHostsOnFacility(ac.getSession(),
+            parms.readList("services", Service.class),
+            ac.getFacilityById(parms.readInt("facility")));
+        } else {
+            return ac.getServicesManager().addDestinationsDefinedByHostsOnFacility(ac.getSession(),
+            ac.getFacilityById(parms.readInt("facility")));
+        }
+        
+      }
+    },
+
     /*#
      * Removes an destination from a facility and service.
      * @param service int Service ID

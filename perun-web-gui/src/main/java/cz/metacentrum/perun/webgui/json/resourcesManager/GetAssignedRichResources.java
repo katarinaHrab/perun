@@ -5,7 +5,6 @@ import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
-import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.view.client.DefaultSelectionEventManager;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
@@ -15,116 +14,118 @@ import cz.metacentrum.perun.webgui.client.resources.TableSorter;
 import cz.metacentrum.perun.webgui.json.*;
 import cz.metacentrum.perun.webgui.json.keyproviders.GeneralKeyProvider;
 import cz.metacentrum.perun.webgui.model.PerunError;
+import cz.metacentrum.perun.webgui.model.ResourceTag;
 import cz.metacentrum.perun.webgui.model.RichResource;
 import cz.metacentrum.perun.webgui.widgets.AjaxLoaderImage;
 import cz.metacentrum.perun.webgui.widgets.PerunTable;
+import cz.metacentrum.perun.webgui.widgets.UnaccentMultiWordSuggestOracle;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 
 /**
  * Ajax query to get assigned rich resources for group or member
- * 
+ *
  * @author Pavel Zlamal <256627@mail.muni.cz>
- * @version $Id$
+ * @version $Id: dc9a1803499cfa4bd819fc91338d7081e33b7e02 $
  */
 public class GetAssignedRichResources implements JsonCallback, JsonCallbackTable<RichResource>, JsonCallbackOracle<RichResource> {
 
-	// Session
-	private PerunWebSession session = PerunWebSession.getInstance();
-	// group id
-	private int id = 0;
-	// JSON URL
-	static private final String JSON_URL = "resourcesManager/getAssignedRichResources";
-	// Selection model
-	final MultiSelectionModel<RichResource> selectionModel = new MultiSelectionModel<RichResource>(new GeneralKeyProvider<RichResource>());
-	// External events
-	private JsonCallbackEvents events = new JsonCallbackEvents();
-	// Table data provider
-	private ListDataProvider<RichResource> dataProvider = new ListDataProvider<RichResource>();
-	// Table itself
-	private PerunTable<RichResource> table;
-	// Table list
-	private ArrayList<RichResource> list = new ArrayList<RichResource>();
-	// Table field updater
-	private FieldUpdater<RichResource, String> tableFieldUpdater;
-	private AjaxLoaderImage loaderImage = new AjaxLoaderImage();
-	private boolean checkable = true;
-	private PerunEntity entity; 
-	// oracle support
-	private ArrayList<RichResource> fullBackup = new ArrayList<RichResource>();
-	private MultiWordSuggestOracle oracle = new MultiWordSuggestOracle();
+    // Session
+    private PerunWebSession session = PerunWebSession.getInstance();
+    // group id
+    private int id = 0;
+    // JSON URL
+    static private final String JSON_URL = "resourcesManager/getAssignedRichResources";
+    // Selection model
+    final MultiSelectionModel<RichResource> selectionModel = new MultiSelectionModel<RichResource>(new GeneralKeyProvider<RichResource>());
+    // External events
+    private JsonCallbackEvents events = new JsonCallbackEvents();
+    // Table data provider
+    private ListDataProvider<RichResource> dataProvider = new ListDataProvider<RichResource>();
+    // Table itself
+    private PerunTable<RichResource> table;
+    // Table list
+    private ArrayList<RichResource> list = new ArrayList<RichResource>();
+    // Table field updater
+    private FieldUpdater<RichResource, String> tableFieldUpdater;
+    private AjaxLoaderImage loaderImage = new AjaxLoaderImage();
+    private boolean checkable = true;
+    private PerunEntity entity;
+    // oracle support
+    private ArrayList<RichResource> fullBackup = new ArrayList<RichResource>();
+    private UnaccentMultiWordSuggestOracle oracle = new UnaccentMultiWordSuggestOracle();
 
-	/**
-	 * Creates a new getResources method instance	
-	 *
-	 * @param id 
-	 * @param entity to get rich resources for
-	 */
-	public GetAssignedRichResources(int id, PerunEntity entity) {
-		this.id = id;
-		this.entity = entity;
-	}
+    /**
+     * Creates a new getResources method instance
+     *
+     * @param id
+     * @param entity to get rich resources for
+     */
+    public GetAssignedRichResources(int id, PerunEntity entity) {
+        this.id = id;
+        this.entity = entity;
+    }
 
-	/**
-	 * Creates a new getResources method instance	
-	 *
-	 * @param id
-	 * @param entity
-	 * @param events Custom events
-	 */
-	public GetAssignedRichResources(int id,  PerunEntity entity, JsonCallbackEvents events) {
-		this.id = id;
-		this.entity = entity;
-		this.events = events;
-	}
+    /**
+     * Creates a new getResources method instance
+     *
+     * @param id
+     * @param entity
+     * @param events Custom events
+     */
+    public GetAssignedRichResources(int id,  PerunEntity entity, JsonCallbackEvents events) {
+        this.id = id;
+        this.entity = entity;
+        this.events = events;
+    }
 
-	/**
-	 * Returns table with resources and with custom onClick
-	 * 
-	 * @param fu Field updater 
-	 * @return table widget
-	 */
-	public CellTable<RichResource> getTable(FieldUpdater<RichResource, String> fu)
-	{
-		this.tableFieldUpdater = fu;	
-		return this.getTable();
-	}
+    /**
+     * Returns table with resources and with custom onClick
+     *
+     * @param fu Field updater
+     * @return table widget
+     */
+    public CellTable<RichResource> getTable(FieldUpdater<RichResource, String> fu)
+    {
+        this.tableFieldUpdater = fu;
+        return this.getTable();
+    }
 
-	/**
-	 * Returns table with resources assigned to group
-	 * 
-	 * @return table widget
-	 */
-	public CellTable<RichResource> getTable() {
+    /**
+     * Returns table with resources assigned to group
+     *
+     * @return table widget
+     */
+    public CellTable<RichResource> getTable() {
 
-		retrieveData();
+        retrieveData();
 
-		// Table data provider.
-		dataProvider = new ListDataProvider<RichResource>(list);
+        // Table data provider.
+        dataProvider = new ListDataProvider<RichResource>(list);
 
-		// Cell table
-		table = new PerunTable<RichResource>(list);
+        // Cell table
+        table = new PerunTable<RichResource>(list);
 
-		// Connect the table to the data provider.
-		dataProvider.addDataDisplay(table);
+        // Connect the table to the data provider.
+        dataProvider.addDataDisplay(table);
 
-		// Sorting
-		ListHandler<RichResource> columnSortHandler = new ListHandler<RichResource>(dataProvider.getList());
-		table.addColumnSortHandler(columnSortHandler);
+        // Sorting
+        ListHandler<RichResource> columnSortHandler = new ListHandler<RichResource>(dataProvider.getList());
+        table.addColumnSortHandler(columnSortHandler);
 
-		// table selection
-		table.setSelectionModel(selectionModel, DefaultSelectionEventManager.<RichResource> createCheckboxManager());
+        // table selection
+        table.setSelectionModel(selectionModel, DefaultSelectionEventManager.<RichResource> createCheckboxManager());
 
-		// set empty content & loader
-		table.setEmptyTableWidget(loaderImage);
+        // set empty content & loader
+        table.setEmptyTableWidget(loaderImage);
 
-		// columns
-		if (checkable) {
-			table.addCheckBoxColumn();			
-		}
-		table.addIdColumn("Resource ID", tableFieldUpdater);
-		table.addNameColumn(tableFieldUpdater);
+        // columns
+        if (checkable) {
+            table.addCheckBoxColumn();
+        }
+        table.addIdColumn("Resource ID", tableFieldUpdater);
+        table.addNameColumn(tableFieldUpdater);
 
         // FACILITY COLUMN
         Column<RichResource, String> facilityColumn = JsonUtils.addColumn(
@@ -142,27 +143,51 @@ public class GetAssignedRichResources implements JsonCallback, JsonCallbackTable
         });
         table.addColumn(facilityColumn, "Facility - Type");
 
+        // TAGS COLUMN
+        Column<RichResource, String> tagsColumn = JsonUtils.addColumn(
+                new JsonUtils.GetValue<RichResource, String>() {
+                    public String getValue(RichResource object) {
+
+                        ArrayList<ResourceTag> tags = object.getResourceTags();
+                        if (tags != null && !tags.isEmpty()) {
+                            String s = "";
+                            tags = new TableSorter<ResourceTag>().sortByName(tags);
+                            for (ResourceTag tag : tags) {
+                                s += tag.getName() + ", ";
+                            }
+                            s = s.substring(0, s.length()-2);
+                            return s;
+                        } else {
+                            return "";
+                        }
+                    }
+                }, tableFieldUpdater);
+
+        // TODO - sorting
+        table.addColumn(tagsColumn, "Tags");
+        table.setColumnWidth(tagsColumn, "200px");
+
         table.addDescriptionColumn(tableFieldUpdater);
 
-		return table;
-		
-	}
+        return table;
 
-	/**
-	 * Retrieve data from RPC
-	 */
-	public void retrieveData()
-	{
-		String param = "";
-		if (entity == PerunEntity.GROUP) {
-			param += "group=" + this.id;			
-		} else if (entity == PerunEntity.MEMBER) {
-			param += "member=" + this.id;
-		}
-		
-		JsonClient js = new JsonClient();
-		js.retrieveData(JSON_URL, param, this);
-	}
+    }
+
+    /**
+     * Retrieve data from RPC
+     */
+    public void retrieveData() {
+
+        String param = "";
+        if (PerunEntity.GROUP.equals(entity)) {
+            param += "group=" + this.id;
+        } else if (PerunEntity.MEMBER.equals(entity)) {
+            param += "member=" + this.id;
+        }
+        JsonClient js = new JsonClient();
+        js.retrieveData(JSON_URL, param, this);
+
+    }
 
     /**
      * Sorts table by objects Name
@@ -181,6 +206,9 @@ public class GetAssignedRichResources implements JsonCallback, JsonCallbackTable
     public void addToTable(RichResource object) {
         list.add(object);
         oracle.add(object.getName());
+        for (ResourceTag rt : object.getResourceTags()) {
+            oracle.add(rt.getName()+" (tag)");
+        }
         dataProvider.flush();
         dataProvider.refresh();
     }
@@ -256,6 +284,9 @@ public class GetAssignedRichResources implements JsonCallback, JsonCallbackTable
     public void insertToTable(int index, RichResource object) {
         list.add(index, object);
         oracle.add(object.getName());
+        for (ResourceTag rt : object.getResourceTags()) {
+            oracle.add(rt.getName()+" (tag)");
+        }
         dataProvider.flush();
         dataProvider.refresh();
     }
@@ -273,6 +304,9 @@ public class GetAssignedRichResources implements JsonCallback, JsonCallbackTable
         this.list.addAll(list);
         for (RichResource r : list) {
             oracle.add(r.getName());
+            for (ResourceTag rt : r.getResourceTags()) {
+                oracle.add(rt.getName()+" (tag)");
+            }
         }
         dataProvider.flush();
         dataProvider.refresh();
@@ -282,42 +316,48 @@ public class GetAssignedRichResources implements JsonCallback, JsonCallbackTable
         return this.list;
     }
 
-	public void filterTable(String filter) {
+    public void filterTable(String filter) {
 
-		// always clear selected items
-		selectionModel.clear();
-		
-		// store list only for first time
-		if (fullBackup.isEmpty() || fullBackup == null) {
-			for (RichResource res : getList()){
-				fullBackup.add(res);
-			}	
-		}
-		if (filter.equalsIgnoreCase("")) {
-			setList(fullBackup);
-		} else {
-            getList().clear();
-			for (RichResource res : fullBackup){
-				// store facility by filter
-				if (res.getName().toLowerCase().startsWith(filter.toLowerCase())) {
-					addToTable(res);
-				}
-			}
-			if (getList().isEmpty()) {
-				loaderImage.loadingFinished();
-			}
-            dataProvider.flush();
-            dataProvider.refresh();
-		}
-		
-	}
 
-	public MultiWordSuggestOracle getOracle() {
-		return this.oracle;
-	}
+        // store list only for first time
+        if (fullBackup.isEmpty() || fullBackup == null) {
+            fullBackup.addAll(list);
+        }
 
-	public void setOracle(MultiWordSuggestOracle oracle) {
-		this.oracle = oracle;
-	}
+        // always clear selected items
+        selectionModel.clear();
+        list.clear();
+
+        if (filter.equalsIgnoreCase("")) {
+            list.addAll(fullBackup);
+        } else {
+            for (RichResource res : fullBackup){
+                // store resource by filter
+                if (res.getName().toLowerCase().startsWith(filter.toLowerCase())) {
+                    list.add(res);
+                }
+                for (ResourceTag r : res.getResourceTags()) {
+                    // remove " (tag)" after tag name
+                    if (r.getName().startsWith(filter.substring(0, (filter.length() > 6) ? filter.length()-6 : filter.length()).trim())) {
+                        list.add(res);
+                        break;
+                    }
+                }
+            }
+        }
+
+        dataProvider.flush();
+        dataProvider.refresh();
+        loaderImage.loadingFinished();
+
+    }
+
+    public UnaccentMultiWordSuggestOracle getOracle() {
+        return this.oracle;
+    }
+
+    public void setOracle(UnaccentMultiWordSuggestOracle oracle) {
+        this.oracle = oracle;
+    }
 
 }

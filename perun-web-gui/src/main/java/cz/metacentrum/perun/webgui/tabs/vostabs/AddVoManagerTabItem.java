@@ -10,7 +10,6 @@ import com.google.gwt.user.client.ui.*;
 import cz.metacentrum.perun.webgui.client.PerunWebSession;
 import cz.metacentrum.perun.webgui.client.UiElements;
 import cz.metacentrum.perun.webgui.client.localization.ButtonTranslation;
-import cz.metacentrum.perun.webgui.client.mainmenu.MainMenu;
 import cz.metacentrum.perun.webgui.client.resources.*;
 import cz.metacentrum.perun.webgui.json.GetEntityById;
 import cz.metacentrum.perun.webgui.json.JsonCallbackEvents;
@@ -18,15 +17,16 @@ import cz.metacentrum.perun.webgui.json.JsonUtils;
 import cz.metacentrum.perun.webgui.json.authzResolver.AddAdmin;
 import cz.metacentrum.perun.webgui.json.usersManager.FindCompleteRichUsers;
 import cz.metacentrum.perun.webgui.json.usersManager.FindUsersByIdsNotInRpc;
+import cz.metacentrum.perun.webgui.model.GeneralObject;
 import cz.metacentrum.perun.webgui.model.User;
 import cz.metacentrum.perun.webgui.model.VirtualOrganization;
-import cz.metacentrum.perun.webgui.tabs.*;
+import cz.metacentrum.perun.webgui.tabs.TabItem;
 import cz.metacentrum.perun.webgui.tabs.userstabs.UserDetailTabItem;
 import cz.metacentrum.perun.webgui.widgets.CustomButton;
+import cz.metacentrum.perun.webgui.widgets.ExtendedTextBox;
 import cz.metacentrum.perun.webgui.widgets.TabMenu;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 /**
  * !! USE AS INNER TAB ONLY !!
@@ -35,9 +35,9 @@ import java.util.Map;
  * 
  * @author Pavel Zlamal <256627@mail.muni.cz>
  * @author Vaclav Mach <374430@mail.muni.cz>
- * @version $Id$
+ * @version $Id: c9103388cea74cc079e1a408a09442ac2cdbb81a $
  */
-public class AddVoManagerTabItem implements TabItem, TabItemWithUrl{
+public class AddVoManagerTabItem implements TabItem {
 
 	/**
 	 * Perun web session
@@ -60,13 +60,8 @@ public class AddVoManagerTabItem implements TabItem, TabItemWithUrl{
 	private int voId = 0;
 	private VirtualOrganization vo;
     private FindCompleteRichUsers users;
-	
-	// CURRENT TAB STATE
-	enum State {
-		searching, listAll		
-	}
-	
-	private State state = State.searching;
+    private boolean somebodyAdded = false;
+
 	private String searchString = "";
 	
 	final SimplePanel pageWidget = new SimplePanel();
@@ -106,7 +101,9 @@ public class AddVoManagerTabItem implements TabItem, TabItemWithUrl{
 
 		titleWidget.setText(Utils.getStrippedStringWithEllipsis(vo.getName())+": add manager");
 
-        this.users = new FindCompleteRichUsers("", null);
+        final CustomButton searchButton = new CustomButton("Search", ButtonTranslation.INSTANCE.searchUsers(), SmallIcons.INSTANCE.findIcon());
+
+        this.users = new FindCompleteRichUsers("", null, JsonCallbackEvents.disableButtonEvents(searchButton));
 
         // MAIN TAB PANEL
         VerticalPanel firstTabPanel = new VerticalPanel();
@@ -127,46 +124,63 @@ public class AddVoManagerTabItem implements TabItem, TabItemWithUrl{
             table = users.getTable();
         }
 
-        final CustomButton addButton = TabMenu.getPredefinedButton(ButtonType.ADD, ButtonTranslation.INSTANCE.addSelectedManagersToVo());
-        tabMenu.addWidget(addButton);
-        final TabItem tab = this;
-        addButton.addClickHandler(new ClickHandler(){
-            public void onClick(ClickEvent event) {
-                ArrayList<User> list = users.getTableSelectedList();
-                if (UiElements.cantSaveEmptyListDialogBox(list)){
-                    for (int i=0; i<list.size(); i++) {
-                        if (i == list.size() - 1) {
-                            AddAdmin request = new AddAdmin(PerunEntity.VIRTUAL_ORGANIZATION, JsonCallbackEvents.closeTabDisableButtonEvents(addButton, tab));
-                            request.addAdmin(voId, list.get(i).getId());
-                        } else {
-                            AddAdmin request = new AddAdmin(PerunEntity.VIRTUAL_ORGANIZATION, JsonCallbackEvents.disableButtonEvents(addButton));
-                            request.addAdmin(voId, list.get(i).getId());
-                        }
-                    }
-                }
-            }
-        });
+        // already added
+        final SimplePanel alreadyAdded = new SimplePanel();
+        alreadyAdded.setStyleName("alreadyAdded");
+        alreadyAdded.setWidget(new HTML("<strong>Already added: </strong>"));
+        alreadyAdded.setVisible(false);
 
-        tabMenu.addWidget(TabMenu.getPredefinedButton(ButtonType.CANCEL, "", new ClickHandler() {
-            @Override
-            public void onClick(ClickEvent clickEvent) {
-                session.getTabManager().closeTab(tab);
-            }
-        }));
+        final CustomButton addButton = TabMenu.getPredefinedButton(ButtonType.ADD, ButtonTranslation.INSTANCE.addSelectedManagersToVo());
+        final TabItem tab = this;
 
         // search textbox
-        TextBox searchBox = tabMenu.addSearchWidget(new PerunSearchEvent() {
+        final ExtendedTextBox searchBox = tabMenu.addSearchWidget(new PerunSearchEvent() {
             @Override
             public void searchFor(String text) {
                 startSearching(text);
                 searchString = text;
             }
-        }, ButtonTranslation.INSTANCE.searchUsers());
+        }, searchButton);
+
+        tabMenu.addWidget(addButton);
+
+        tabMenu.addWidget(TabMenu.getPredefinedButton(ButtonType.CLOSE, "", new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent clickEvent) {
+                session.getTabManager().closeTab(tab, somebodyAdded);
+            }
+        }));
+
+        addButton.addClickHandler(new ClickHandler(){
+            public void onClick(ClickEvent event) {
+                final ArrayList<User> list = users.getTableSelectedList();
+                if (UiElements.cantSaveEmptyListDialogBox(list)){
+                    for (int i=0; i<list.size(); i++) {
+                        // FIXME - Should have only one callback to core
+                        final int n = i;
+                        AddAdmin request = new AddAdmin(JsonCallbackEvents.disableButtonEvents(addButton, new JsonCallbackEvents(){
+                            @Override
+                            public void onFinished(JavaScriptObject jso) {
+                                // put names to already added
+                                alreadyAdded.setVisible(true);
+                                alreadyAdded.getWidget().getElement().setInnerHTML(alreadyAdded.getWidget().getElement().getInnerHTML() + list.get(n).getFullName() + ", ");
+                                // unselect added person
+                                users.getSelectionModel().setSelected(list.get(n), false);
+                                // clear search
+                                searchBox.getTextBox().setText("");
+                                somebodyAdded = true;
+                            }
+                        }));
+                        request.addVoAdmin(vo, list.get(i));
+                    }
+                }
+            }
+        });
 
         // if some text has been searched before
         if(!searchString.equals(""))
         {
-            searchBox.setText(searchString);
+            searchBox.getTextBox().setText(searchString);
             startSearching(searchString);
         }
 
@@ -203,6 +217,7 @@ public class AddVoManagerTabItem implements TabItem, TabItemWithUrl{
         // add menu and the table to the main panel
         firstTabPanel.add(tabMenu);
         firstTabPanel.setCellHeight(tabMenu, "30px");
+        firstTabPanel.add(alreadyAdded);
         firstTabPanel.add(sp);
 
         session.getUiElements().resizePerunTable(sp, 350, this);
@@ -260,7 +275,7 @@ public class AddVoManagerTabItem implements TabItem, TabItemWithUrl{
 	}
 
 	public ImageResource getIcon() {
-		return SmallIcons.INSTANCE.administratorIcon(); 
+		return SmallIcons.INSTANCE.addIcon();
 	}
 
 
@@ -296,17 +311,9 @@ public class AddVoManagerTabItem implements TabItem, TabItemWithUrl{
 		return false;
 	}
 	
-	public void open()
-	{
-		session.getUiElements().getMenu().openMenu(MainMenu.VO_ADMIN);
-		if(vo != null){
-			session.setActiveVo(vo);
-			return;
-		}
-		session.setActiveVoId(voId);
+	public void open() {
 	}
 
-	
 	public boolean isAuthorized() {
 
 		if (session.isVoAdmin(voId)) {
@@ -316,23 +323,5 @@ public class AddVoManagerTabItem implements TabItem, TabItemWithUrl{
 		}
 
 	}
-	
-	
-	public final static String URL = "add-manager";
-	
-	public String getUrl()
-	{
-		return URL;
-	}
-	
-	public String getUrlWithParameters()
-	{
-		return VosTabs.URL + UrlMapper.TAB_NAME_SEPARATOR + getUrl() + "?id=" + voId;
-	}
-	
-	static public AddVoManagerTabItem load(Map<String, String> parameters)
-	{
-		int voId = Integer.parseInt(parameters.get("id"));
-		return new AddVoManagerTabItem(voId);
-	}
+
 }

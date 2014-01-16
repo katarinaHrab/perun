@@ -3,21 +3,19 @@ package cz.metacentrum.perun.webgui.json.authzResolver;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.json.client.JSONNumber;
 import com.google.gwt.json.client.JSONObject;
-import com.google.gwt.user.client.ui.HTML;
 import cz.metacentrum.perun.webgui.client.PerunWebSession;
+import cz.metacentrum.perun.webgui.client.UiElements;
 import cz.metacentrum.perun.webgui.client.resources.PerunEntity;
 import cz.metacentrum.perun.webgui.json.JsonCallbackEvents;
 import cz.metacentrum.perun.webgui.json.JsonPostClient;
-import cz.metacentrum.perun.webgui.model.PerunError;
-import cz.metacentrum.perun.webgui.widgets.Confirm;
+import cz.metacentrum.perun.webgui.model.*;
 
 /**
  * Ajax query which adds admin to VO or Group
  * 
  * @author Pavel Zlamal <256627@mail.muni.cz>
- * @version $Id$
+ * @version $Id: 60eaaf7bd262b410113b77670ccb06656e4dc0af $
  */
-
 public class AddAdmin {
 
 	// web session
@@ -35,21 +33,15 @@ public class AddAdmin {
 
 	/**
 	 * Creates a new request
-	 *
-     * @param entity VO/GROUP/FACILITY
-     */
-	public AddAdmin(PerunEntity entity) {
-		this.entity = entity;
-	}
+	 */
+	public AddAdmin() {}
 
 	/**
 	 * Creates a new request with custom events
 	 *
-     * @param entity VO/GROUP/FACILITY
      * @param events Custom events
      */
-	public AddAdmin(PerunEntity entity, JsonCallbackEvents events) {
-		this.entity = entity;
+	public AddAdmin(JsonCallbackEvents events) {
 		this.events = events;
 	}
 
@@ -58,85 +50,279 @@ public class AddAdmin {
 	 * 
 	 * @return true/false for continue/stop
 	 */
-	private boolean testAdding()
-	{
+	private boolean testAdding() {
+
 		boolean result = true;
 		String errorMsg = "";
 
 		if(entityId == 0){
-			errorMsg += "Wrong parameter <strong>VO/Group ID</strong>'.\n";
+			errorMsg += "Wrong parameter <strong>VO/Group/Facility ID</strong>";
 			result = false;
 		}
 
 		if(userId == 0){
-			errorMsg += "Wrong parameter <strong>User ID</strong>.\n";
+			errorMsg += "Wrong parameter <strong>User/Group ID</strong>";
 			result = false;
 		}
 
 		if(errorMsg.length()>0){
-			Confirm c = new Confirm("Error while adding admin", new HTML(errorMsg), true);
-			c.show();
+            UiElements.generateAlert("Parameter error", errorMsg);
 		}
 
 		return result;
 	}
 
-	/**
-	 * Attempts to add a new admin to VO/Group, it first tests the values and then submits them.
-	 * 
-	 * @param id ID of Entity, where we want to add admin
-	 * @param userId ID of Member to be admin
-	 */
-	public void addAdmin(final int id,final int userId)
-	{
+    /**
+     * Attempts to add a new admin to Group, it first tests the values and then submits them.
+     *
+     * @param group where we want to add admin
+     * @param user User to be admin
+     */
+    public void addGroupAdmin(final Group group, final User user) {
 
-		this.userId = userId;
-		this.entityId = id;
+        this.userId = (user != null) ? user.getId() : 0;
+        this.entityId = (group != null) ? group.getId() : 0;
+        this.entity = PerunEntity.GROUP;
 
-		// test arguments
-		if(!this.testAdding()){
-			return;
-		}
-
-		// new events
-		JsonCallbackEvents newEvents = new JsonCallbackEvents(){
-			public void onError(PerunError error) {
-				session.getUiElements().setLogErrorText("Adding admin (User ID: " + userId + ") failed.");
-				events.onError(error); // custom events
-			};
-
-			public void onFinished(JavaScriptObject jso) {
-				session.getUiElements().setLogSuccessText("Admin (User ID: " + userId + ") successfully added to "+entity+": "+ entityId);
-				events.onFinished(jso);
-			};
-
-			public void onLoadingStart() {
-				events.onLoadingStart();
-			};
-		};
-
-		// sending data
-		JsonPostClient jspc = new JsonPostClient(newEvents);
-
-        if (entity.equals(PerunEntity.VIRTUAL_ORGANIZATION)) {
-            jspc.sendData(VO_JSON_URL, prepareJSONObject());
-        } else if (entity.equals(PerunEntity.GROUP)) {
-            jspc.sendData(GROUP_JSON_URL, prepareJSONObject());
-        } else if (entity.equals(PerunEntity.FACILITY)) {
-            jspc.sendData(FACILITY_JSON_URL, prepareJSONObject());
+        // test arguments
+        if(!this.testAdding()){
+            return;
         }
 
-	}
+        // new events
+        JsonCallbackEvents newEvents = new JsonCallbackEvents(){
+            public void onError(PerunError error) {
+                session.getUiElements().setLogErrorText("Adding "+user.getFullName()+" as admin failed.");
+                events.onError(error); // custom events
+            };
+
+            public void onFinished(JavaScriptObject jso) {
+                session.getUiElements().setLogSuccessText("User " + user.getFullName()+ " added as admin of "+group.getName());
+                events.onFinished(jso);
+            };
+
+            public void onLoadingStart() {
+                events.onLoadingStart();
+            };
+        };
+
+        // sending data
+        JsonPostClient jspc = new JsonPostClient(newEvents);
+        jspc.sendData(GROUP_JSON_URL, prepareJSONObject());
+
+    }
+
+    /**
+     * Attempts to add a new admin to VO, it first tests the values and then submits them.
+     *
+     * @param vo where we want to add admin
+     * @param user User to be admin
+     */
+    public void addVoAdmin(final VirtualOrganization vo, final User user) {
+
+        this.userId = (user != null) ? user.getId() : 0;
+        this.entityId = (vo != null) ? vo.getId() : 0;
+        this.entity = PerunEntity.VIRTUAL_ORGANIZATION;
+
+        // test arguments
+        if(!this.testAdding()){
+            return;
+        }
+
+        // new events
+        JsonCallbackEvents newEvents = new JsonCallbackEvents(){
+            public void onError(PerunError error) {
+                session.getUiElements().setLogErrorText("Adding "+user.getFullName()+" as admin failed.");
+                events.onError(error); // custom events
+            };
+
+            public void onFinished(JavaScriptObject jso) {
+                session.getUiElements().setLogSuccessText("User " + user.getFullName()+ " added as admin of "+vo.getName());
+                events.onFinished(jso);
+            };
+
+            public void onLoadingStart() {
+                events.onLoadingStart();
+            };
+        };
+
+        // sending data
+        JsonPostClient jspc = new JsonPostClient(newEvents);
+        jspc.sendData(VO_JSON_URL, prepareJSONObject());
+
+    }
+
+    /**
+     * Attempts to add a new admin to Facility, it first tests the values and then submits them.
+     *
+     * @param facility where we want to add admin
+     * @param user User to be admin
+     */
+    public void addFacilityAdmin(final Facility facility, final User user) {
+
+        this.userId = (user != null) ? user.getId() : 0;
+        this.entityId = (facility != null) ? facility.getId() : 0;
+        this.entity = PerunEntity.FACILITY;
+
+        // test arguments
+        if(!this.testAdding()){
+            return;
+        }
+
+        // new events
+        JsonCallbackEvents newEvents = new JsonCallbackEvents(){
+            public void onError(PerunError error) {
+                session.getUiElements().setLogErrorText("Adding "+user.getFullName()+" as admin failed.");
+                events.onError(error); // custom events
+            };
+
+            public void onFinished(JavaScriptObject jso) {
+                session.getUiElements().setLogSuccessText("User " + user.getFullName()+ " added as admin of "+facility.getName());
+                events.onFinished(jso);
+            };
+
+            public void onLoadingStart() {
+                events.onLoadingStart();
+            };
+        };
+
+        // sending data
+        JsonPostClient jspc = new JsonPostClient(newEvents);
+        jspc.sendData(FACILITY_JSON_URL, prepareJSONObject());
+
+    }
+
+    /**
+     * Attempts to add a new admin to VO/Group/Facility, it first tests the values and then submits them.
+     *
+     * @param groupToAddAdminTo where we want to add admin
+     * @param group Group to be admin
+     */
+    public void addGroupAdminGroup(final Group groupToAddAdminTo,final Group group) {
+
+        // store group id to user id to used unified check method
+        this.userId = (group != null) ? group.getId() : 0;
+        this.entityId = (groupToAddAdminTo != null) ? groupToAddAdminTo.getId() : 0;
+        this.entity = PerunEntity.GROUP;
+
+        // test arguments
+        if(!this.testAdding()){
+            return;
+        }
+
+        // new events
+        JsonCallbackEvents newEvents = new JsonCallbackEvents(){
+            public void onError(PerunError error) {
+                session.getUiElements().setLogErrorText("Adding group "+group.getShortName()+" as admin failed.");
+                events.onError(error); // custom events
+            };
+
+            public void onFinished(JavaScriptObject jso) {
+                session.getUiElements().setLogSuccessText("Group " + group.getShortName()+ " added as admin of "+groupToAddAdminTo.getName());
+                events.onFinished(jso);
+            };
+
+            public void onLoadingStart() {
+                events.onLoadingStart();
+            };
+        };
+
+        // sending data
+        JsonPostClient jspc = new JsonPostClient(newEvents);
+        jspc.sendData(GROUP_JSON_URL, prepareJSONObjectForGroup());
+
+    }
+
+    /**
+     * Attempts to add a new admin to VO/Group/Facility, it first tests the values and then submits them.
+     *
+     * @param vo where we want to add admin
+     * @param group Group to be admin
+     */
+    public void addVoAdminGroup(final VirtualOrganization vo,final Group group) {
+
+        // store group id to user id to used unified check method
+        this.userId = (group != null) ? group.getId() : 0;
+        this.entityId = (vo != null) ? vo.getId() : 0;
+        this.entity = PerunEntity.VIRTUAL_ORGANIZATION;
+
+        // test arguments
+        if(!this.testAdding()){
+            return;
+        }
+
+        // new events
+        JsonCallbackEvents newEvents = new JsonCallbackEvents(){
+            public void onError(PerunError error) {
+                session.getUiElements().setLogErrorText("Adding group "+group.getShortName()+" as admin failed.");
+                events.onError(error); // custom events
+            };
+
+            public void onFinished(JavaScriptObject jso) {
+                session.getUiElements().setLogSuccessText("Group " + group.getShortName()+ " added as admin of "+vo.getName());
+                events.onFinished(jso);
+            };
+
+            public void onLoadingStart() {
+                events.onLoadingStart();
+            };
+        };
+
+        // sending data
+        JsonPostClient jspc = new JsonPostClient(newEvents);
+        jspc.sendData(VO_JSON_URL, prepareJSONObjectForGroup());
+
+    }
+
+    /**
+     * Attempts to add a new admin to VO/Group/Facility, it first tests the values and then submits them.
+     *
+     * @param facility where we want to add admin
+     * @param group Group to be admin
+     */
+    public void addFacilityAdminGroup(final Facility facility,final Group group) {
+
+        // store group id to user id to used unified check method
+        this.userId = (group != null) ? group.getId() : 0;
+        this.entityId = (facility != null) ? facility.getId() : 0;
+        this.entity = PerunEntity.FACILITY;
+
+        // test arguments
+        if(!this.testAdding()){
+            return;
+        }
+
+        // new events
+        JsonCallbackEvents newEvents = new JsonCallbackEvents(){
+            public void onError(PerunError error) {
+                session.getUiElements().setLogErrorText("Adding group "+group.getShortName()+" as admin failed.");
+                events.onError(error); // custom events
+            };
+
+            public void onFinished(JavaScriptObject jso) {
+                session.getUiElements().setLogSuccessText("Group " + group.getShortName()+ " added as admin of "+facility.getName());
+                events.onFinished(jso);
+            };
+
+            public void onLoadingStart() {
+                events.onLoadingStart();
+            };
+        };
+
+        // sending data
+        JsonPostClient jspc = new JsonPostClient(newEvents);
+        jspc.sendData(FACILITY_JSON_URL, prepareJSONObjectForGroup());
+
+    }
 
 	/**
 	 * Prepares a JSON object
 	 * 
 	 * @return JSONObject the whole query
 	 */
-	private JSONObject prepareJSONObject()
-	{
-		// Whole JSON query
-		JSONObject jsonQuery = new JSONObject();
+	private JSONObject prepareJSONObject() {
+
+        JSONObject jsonQuery = new JSONObject();
 
         if (entity.equals(PerunEntity.VIRTUAL_ORGANIZATION)) {
             jsonQuery.put("vo", new JSONNumber(entityId));
@@ -149,5 +335,26 @@ public class AddAdmin {
 
 		return jsonQuery;
 	}
+
+    /**
+     * Prepares a JSON object
+     *
+     * @return JSONObject the whole query
+     */
+    private JSONObject prepareJSONObjectForGroup() {
+
+        JSONObject jsonQuery = new JSONObject();
+
+        if (entity.equals(PerunEntity.VIRTUAL_ORGANIZATION)) {
+            jsonQuery.put("vo", new JSONNumber(entityId));
+        } else if (entity.equals(PerunEntity.GROUP)) {
+            jsonQuery.put("group", new JSONNumber(entityId));
+        } else if (entity.equals(PerunEntity.FACILITY)) {
+            jsonQuery.put("facility", new JSONNumber(entityId));
+        }
+        jsonQuery.put("authorizedGroup", new JSONNumber(userId));
+
+        return jsonQuery;
+    }
 
 }

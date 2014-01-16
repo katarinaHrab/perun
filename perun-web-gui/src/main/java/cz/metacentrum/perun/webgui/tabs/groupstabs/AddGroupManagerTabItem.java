@@ -10,7 +10,6 @@ import com.google.gwt.user.client.ui.*;
 import cz.metacentrum.perun.webgui.client.PerunWebSession;
 import cz.metacentrum.perun.webgui.client.UiElements;
 import cz.metacentrum.perun.webgui.client.localization.ButtonTranslation;
-import cz.metacentrum.perun.webgui.client.mainmenu.MainMenu;
 import cz.metacentrum.perun.webgui.client.resources.*;
 import cz.metacentrum.perun.webgui.json.GetEntityById;
 import cz.metacentrum.perun.webgui.json.JsonCallbackEvents;
@@ -18,24 +17,27 @@ import cz.metacentrum.perun.webgui.json.JsonUtils;
 import cz.metacentrum.perun.webgui.json.authzResolver.AddAdmin;
 import cz.metacentrum.perun.webgui.json.usersManager.FindCompleteRichUsers;
 import cz.metacentrum.perun.webgui.json.usersManager.FindUsersByIdsNotInRpc;
+import cz.metacentrum.perun.webgui.model.GeneralObject;
 import cz.metacentrum.perun.webgui.model.Group;
 import cz.metacentrum.perun.webgui.model.User;
-import cz.metacentrum.perun.webgui.tabs.*;
+import cz.metacentrum.perun.webgui.tabs.TabItem;
 import cz.metacentrum.perun.webgui.tabs.userstabs.UserDetailTabItem;
 import cz.metacentrum.perun.webgui.widgets.CustomButton;
+import cz.metacentrum.perun.webgui.widgets.ExtendedTextBox;
 import cz.metacentrum.perun.webgui.widgets.TabMenu;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 /**
- * Provides page with add admin to VO form
+ * Provides page with add admin to Group form
+ *
+ * !! USE AS INNER TAB ONLY !!
  * 
  * @author Pavel Zlamal <256627@mail.muni.cz>
  * @author Vaclav Mach <374430@mail.muni.cz>
- * @version $Id$
+ * @version $Id: $
  */
-public class AddGroupManagerTabItem implements TabItem, TabItemWithUrl{
+public class AddGroupManagerTabItem implements TabItem {
 
 	/**
 	 * Perun web session
@@ -61,17 +63,10 @@ public class AddGroupManagerTabItem implements TabItem, TabItemWithUrl{
 	private Group group;
 	private int groupId;
 	
-	// CURRENT TAB STATE
-	enum State {
-		searching, listAll		
-	}
-	
-	// default state is search
-	State state = State.searching;
-	
 	// when searching
 	private String searchString = "";
     private FindCompleteRichUsers users;
+    private boolean somebodyAdded = false;
 	
 	/**
 	 * Creates a tab instance
@@ -120,7 +115,8 @@ public class AddGroupManagerTabItem implements TabItem, TabItemWithUrl{
 			return getWidget();
 		}
 
-        this.users = new FindCompleteRichUsers("", null);
+        final CustomButton searchButton = new CustomButton("Search", ButtonTranslation.INSTANCE.searchUsers(), SmallIcons.INSTANCE.findIcon());
+        this.users = new FindCompleteRichUsers("", null, JsonCallbackEvents.disableButtonEvents(searchButton));
 
         // MAIN TAB PANEL
         VerticalPanel firstTabPanel = new VerticalPanel();
@@ -143,46 +139,60 @@ public class AddGroupManagerTabItem implements TabItem, TabItemWithUrl{
 
         final TabItem tab = this;
 
+        // already added
+        final SimplePanel alreadyAdded = new SimplePanel();
+        alreadyAdded.setStyleName("alreadyAdded");
+        alreadyAdded.setWidget(new HTML("<strong>Already added: </strong>"));
+        alreadyAdded.setVisible(false);
+
+        // search textbox
+        final ExtendedTextBox searchBox = tabMenu.addSearchWidget(new PerunSearchEvent() {
+            @Override
+            public void searchFor(String text) {
+                startSearching(text);
+                searchString = text;
+            }
+        }, searchButton);
+
         final CustomButton addButton = TabMenu.getPredefinedButton(ButtonType.ADD, ButtonTranslation.INSTANCE.addSelectedManagersToGroup());
         addButton.addClickHandler(new ClickHandler() {
             public void onClick(ClickEvent event) {
                 // TODO - SHOULD HAVE ONLY ONE CALLBACK TO CORE !!
-                ArrayList<User> list = users.getTableSelectedList();
+                final ArrayList<User> list = users.getTableSelectedList();
                 if (UiElements.cantSaveEmptyListDialogBox(list)) {
                     for (int i = 0; i < list.size(); i++) {
-                        if (i == list.size()-1) {
-                            AddAdmin request = new AddAdmin(PerunEntity.GROUP, JsonCallbackEvents.closeTabDisableButtonEvents(addButton, tab));
-                            request.addAdmin(groupId, list.get(i).getId());
-                        } else {
-                            AddAdmin request = new AddAdmin(PerunEntity.GROUP, JsonCallbackEvents.disableButtonEvents(addButton));
-                            request.addAdmin(groupId, list.get(i).getId());
-                        }
+                        final int n = i;
+                        AddAdmin request = new AddAdmin(JsonCallbackEvents.disableButtonEvents(addButton, new JsonCallbackEvents(){
+                            @Override
+                            public void onFinished(JavaScriptObject jso) {
+                                // put names to already added
+                                alreadyAdded.setVisible(true);
+                                alreadyAdded.getWidget().getElement().setInnerHTML(alreadyAdded.getWidget().getElement().getInnerHTML() + list.get(n).getFullName() + ", ");
+                                // unselect added person
+                                users.getSelectionModel().setSelected(list.get(n), false);
+                                // clear search
+                                searchBox.getTextBox().setText("");
+                                somebodyAdded = true;
+                            }
+                        }));
+                        request.addGroupAdmin(group, list.get(i));
                     }
                 }
             }
         });
         tabMenu.addWidget(addButton);
 
-        tabMenu.addWidget(TabMenu.getPredefinedButton(ButtonType.CANCEL, "", new ClickHandler() {
+        tabMenu.addWidget(TabMenu.getPredefinedButton(ButtonType.CLOSE, "", new ClickHandler() {
             @Override
             public void onClick(ClickEvent clickEvent) {
-                session.getTabManager().closeTab(tab, false);
+                session.getTabManager().closeTab(tab, somebodyAdded);
             }
         }));
-
-        // search textbox
-        TextBox searchBox = tabMenu.addSearchWidget(new PerunSearchEvent() {
-            @Override
-            public void searchFor(String text) {
-                startSearching(text);
-                searchString = text;
-            }
-        }, ButtonTranslation.INSTANCE.searchUsers());
 
         // if some text has been searched before
         if(!searchString.equals(""))
         {
-            searchBox.setText(searchString);
+            searchBox.getTextBox().setText(searchString);
             startSearching(searchString);
         }
 
@@ -259,12 +269,6 @@ public class AddGroupManagerTabItem implements TabItem, TabItemWithUrl{
 
         users.searchFor(text);
     }
-	
-	private void setPageWidget(Widget w)
-	{
-		this.pageWidget.setWidget(w);
-
-	}
 
 	public Widget getWidget() {
 		return this.contentWidget;
@@ -275,7 +279,7 @@ public class AddGroupManagerTabItem implements TabItem, TabItemWithUrl{
 	}
 
 	public ImageResource getIcon() {
-		return SmallIcons.INSTANCE.administratorIcon(); 
+		return SmallIcons.INSTANCE.addIcon();
 	}
 
 	@Override
@@ -310,15 +314,7 @@ public class AddGroupManagerTabItem implements TabItem, TabItemWithUrl{
 		return false;
 	}
 	
-	public void open()
-	{
-		session.getUiElements().getMenu().openMenu(MainMenu.GROUP_ADMIN);
-		if(group != null){
-			session.setActiveGroup(group);
-			return;
-		}
-		session.setActiveGroupId(groupId);
-		
+	public void open() {
 	}
 	
 	public boolean isAuthorized() {
@@ -329,24 +325,6 @@ public class AddGroupManagerTabItem implements TabItem, TabItemWithUrl{
 			return false;
 		}
 
-	}
-	
-	public final static String URL = "add-manager";
-	
-	public String getUrl()
-	{
-		return URL;
-	}
-	
-	public String getUrlWithParameters()
-	{
-		return GroupsTabs.URL + UrlMapper.TAB_NAME_SEPARATOR + getUrl() + "?id=" + groupId;
-	}
-	
-	static public AddGroupManagerTabItem load(Map<String, String> parameters)
-	{
-		int id = Integer.parseInt(parameters.get("id"));
-		return new AddGroupManagerTabItem(id);
 	}
 
 }

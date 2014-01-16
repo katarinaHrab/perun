@@ -301,6 +301,21 @@ public enum FacilitiesManagerMethod implements ManagerMethod {
       return null;
     }
   },
+
+  /*#
+   * Update a facility (facility name)
+   *
+   * @param facility Facility JSON object
+   * @return Facility updated Facility object
+   */
+  updateFacility {
+
+      @Override
+      public Facility call(ApiCaller ac, Deserializer parms) throws PerunException {
+          return ac.getFacilitiesManager().updateFacility(ac.getSession(),
+                  parms.read("facility", Facility.class));
+      }
+  },
   
   /*#
    * Returns list of all facilities owned by the owner.
@@ -382,14 +397,8 @@ public enum FacilitiesManagerMethod implements ManagerMethod {
       Facility facility = ac.getFacilityById(parms.readInt("facility"));
 
       List<String> hostnames = parms.readList("hostnames", String.class);
-      List<Host> hosts = new ArrayList<Host>();
-      for(String hostname : hostnames) {
-        Host host = new Host();
-        host.setHostname(hostname);
-        hosts.add(host);
-      }
-
-      return ac.getFacilitiesManager().addHosts(ac.getSession(), hosts, facility);
+     
+      return ac.getFacilitiesManager().addHosts(ac.getSession(), facility, hostnames);
     }
   },
   
@@ -653,8 +662,21 @@ public enum FacilitiesManagerMethod implements ManagerMethod {
           ac.getUserById(parms.readInt("user")));
     }
   },
-
   
+  /*#
+   * Return all facilities where exists host with the specific hostname
+   * 
+   * @param hostname specific hostname
+   * @return List<Facility> Found Facilities
+   */
+  getFacilitiesByHostName {
+
+    @Override
+    public List<Facility> call(ApiCaller ac, Deserializer parms) throws PerunException {
+      return ac.getFacilitiesManager().getFacilitiesByHostName(ac.getSession(),
+          parms.readString("hostname"));
+    }
+  },
   
   /*#
    * Return all users which can use this facility

@@ -27,6 +27,17 @@ public class RichMember extends JavaScriptObject {
 	public final native int getUserId() /*-{
 		return this.userId;
 	}-*/;
+
+    public final native void setChecked(boolean value) /*-{
+        this.checked = value;
+    }-*/;
+
+    public final native boolean isChecked() /*-{
+        if(typeof this.checked === 'undefined'){
+            this.checked = false;
+        }
+        return this.checked;
+    }-*/;
 	
 	/**
 	 * Get user stored in rich member
@@ -100,6 +111,13 @@ public class RichMember extends JavaScriptObject {
     public final native void setAttribute(Attribute attribute) /*-{
 
         if (attribute == null) return;
+        // init fields if empty
+        if (this.userAttributes == null) {
+            this.userAttributes = [];
+        }
+        if (this.memberAttributes == null) {
+            this.memberAttributes = [];
+        }
         var found = false;
         if (attribute.namespace.indexOf("urn:perun:user:") !== -1) {
 
@@ -115,7 +133,7 @@ public class RichMember extends JavaScriptObject {
                 this.userAttributes[this.userAttributes.length] = attribute;
             }
 
-        } else if (namespace.indexOf("urn:perun:member:") !== -1) {
+        } else if (attribute.namespace.indexOf("urn:perun:member:") !== -1) {
 
             // set member attribute
             for(var i in this.memberAttributes){
@@ -166,6 +184,19 @@ public class RichMember extends JavaScriptObject {
 	public final native ArrayList<UserExtSource> getUserExtSources() /*-{
 		return this.userExtSources;
 	}-*/;
+
+    /**
+     * Get membership type (context associated on member's retrieval)
+     *
+     * @return membership type (DIRECT, INDIRECT, NOT_DEFINED, ....)
+     */
+    public final native String getMembershipType() /*-{
+        if (!this.membershipType) {
+            return "NOT_DETERMINED";
+        } else {
+            return this.membershipType;
+        }
+    }-*/;
 	
 	/**
 	 * Returns Perun specific type of object

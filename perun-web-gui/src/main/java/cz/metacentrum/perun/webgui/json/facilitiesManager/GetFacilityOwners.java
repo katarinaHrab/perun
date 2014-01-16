@@ -16,111 +16,122 @@ import cz.metacentrum.perun.webgui.model.Owner;
 import cz.metacentrum.perun.webgui.model.PerunError;
 import cz.metacentrum.perun.webgui.widgets.AjaxLoaderImage;
 import cz.metacentrum.perun.webgui.widgets.PerunTable;
+import cz.metacentrum.perun.webgui.widgets.UnaccentMultiWordSuggestOracle;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 
 /**
  * Ajax query to get all facility owners
- * 
+ *
  * @author Pavel Zlamal <256627@mail.muni.cz>
  * @version $Id: 9a36d0278e8d44666dbc40ddacdde585d192a992 $
  */
-public class GetFacilityOwners implements JsonCallback, JsonCallbackTable<Owner> {
+public class GetFacilityOwners implements JsonCallback, JsonCallbackTable<Owner>, JsonCallbackOracle<Owner> {
 
-	// Session
-	private PerunWebSession session = PerunWebSession.getInstance();
-	// JSON URL
-	static private final String JSON_URL = "facilitiesManager/getOwners";
-	// External events
-	private JsonCallbackEvents events = new JsonCallbackEvents();
-	// data providers
-	private ListDataProvider<Owner> dataProvider = new ListDataProvider<Owner>();
-	private ArrayList<Owner> list = new ArrayList<Owner>();
-	private PerunTable<Owner> table;
-	// Selection model
-	final MultiSelectionModel<Owner> selectionModel = new MultiSelectionModel<Owner>(new GeneralKeyProvider<Owner>());
-	// loader image
-	private AjaxLoaderImage loaderImage = new AjaxLoaderImage();
-	// facility
-	private Facility facility;
-	// checkable
-	private boolean checkable = true;
+    // Session
+    private PerunWebSession session = PerunWebSession.getInstance();
+    // JSON URL
+    static private final String JSON_URL = "facilitiesManager/getOwners";
+    // External events
+    private JsonCallbackEvents events = new JsonCallbackEvents();
+    // data providers
+    private ListDataProvider<Owner> dataProvider = new ListDataProvider<Owner>();
+    private ArrayList<Owner> list = new ArrayList<Owner>();
+    private PerunTable<Owner> table;
+    // Selection model
+    final MultiSelectionModel<Owner> selectionModel = new MultiSelectionModel<Owner>(new GeneralKeyProvider<Owner>());
+    // loader image
+    private AjaxLoaderImage loaderImage = new AjaxLoaderImage();
+    // facility
+    private Facility facility;
+    // checkable
+    private boolean checkable = true;
+    private ArrayList<Owner> backupList = new ArrayList<Owner>();
+    private UnaccentMultiWordSuggestOracle oracle = new UnaccentMultiWordSuggestOracle();
 
-	/**
-	 * New instance of get facility owners
-	 * 
-	 * @param fac Facility
-	 */
-	public GetFacilityOwners(Facility fac) {
-		this.facility = fac;
-	}
+    /**
+     * New instance of get facility owners
+     *
+     * @param fac Facility
+     */
+    public GetFacilityOwners(Facility fac) {
+        this.facility = fac;
+    }
 
-	/**
-	 * New instance of get facility owners with external events
-	 * 
-	 * @param fac Facility
-	 * @param events external events
-	 */
-	public GetFacilityOwners(Facility fac, JsonCallbackEvents events) {
-		this.facility = fac;
-		this.events = events;
-	}
+    /**
+     * New instance of get facility owners with external events
+     *
+     * @param fac Facility
+     * @param events external events
+     */
+    public GetFacilityOwners(Facility fac, JsonCallbackEvents events) {
+        this.facility = fac;
+        this.events = events;
+    }
 
-	/**
-	 * Return table with facility owners - starts RPC call
-	 *  
-	 * @return table widget
-	 */
-	public CellTable<Owner> getTable() {
+    /**
+     * Return table with facility owners - starts RPC call
+     *
+     * @return table widget
+     */
+    public CellTable<Owner> getTable() {
+        retrieveData();
+        return getEmptyTable();
+    }
 
-		retrieveData();
+    /**
+     * Return empty table with facility owners
+     *
+     * @return table widget
+     */
+    public CellTable<Owner> getEmptyTable() {
 
-		// Table data provider.
-		dataProvider = new ListDataProvider<Owner>(list);
+        // Table data provider.
+        dataProvider = new ListDataProvider<Owner>(list);
 
-		// Cell table
-		table = new PerunTable<Owner>(list);
-		
-		// Connect the table to the data provider.
-		dataProvider.addDataDisplay(table);
+        // Cell table
+        table = new PerunTable<Owner>(list);
+
+        // Connect the table to the data provider.
+        dataProvider.addDataDisplay(table);
 
         loaderImage.setEmptyResultMessage("Facility has no owners.");
 
-		// Sorting
-		ListHandler<Owner> columnSortHandler = new ListHandler<Owner>(dataProvider.getList());
-		table.addColumnSortHandler(columnSortHandler);
-		
-		// table selection
-		table.setSelectionModel(selectionModel, DefaultSelectionEventManager.<Owner> createCheckboxManager());
+        // Sorting
+        ListHandler<Owner> columnSortHandler = new ListHandler<Owner>(dataProvider.getList());
+        table.addColumnSortHandler(columnSortHandler);
 
-		// set empty content & loader
-		table.setEmptyTableWidget(loaderImage);
-		
-		// checkbox column column
-		if (checkable) {
-			table.addCheckBoxColumn();			
-		}
-		
-		table.addIdColumn("Owner Id");
-		
-		table.addNameColumn(null);
+        // table selection
+        table.setSelectionModel(selectionModel, DefaultSelectionEventManager.<Owner> createCheckboxManager());
 
-		// CONTACT COLUMN
-		TextColumn<Owner> contactColumn = new TextColumn<Owner>() {
-			public String getValue(Owner owner) {
-				return String.valueOf(owner.getContact());
-			}
-		};
+        // set empty content & loader
+        table.setEmptyTableWidget(loaderImage);
 
-		table.addColumn(contactColumn, "Contact");
+        // checkbox column column
+        if (checkable) {
+            table.addCheckBoxColumn();
+        }
 
-		contactColumn.setSortable(true);
-		columnSortHandler.setComparator(contactColumn, new Comparator<Owner>(){
-			public int compare(Owner o1, Owner o2) {
-				return o1.getContact().compareToIgnoreCase(o2.getContact());
-			}
-		});
+        table.addIdColumn("Owner Id");
+
+        table.addNameColumn(null);
+
+        // CONTACT COLUMN
+        TextColumn<Owner> contactColumn = new TextColumn<Owner>() {
+            public String getValue(Owner owner) {
+                return String.valueOf(owner.getContact());
+            }
+        };
+
+        table.addColumn(contactColumn, "Contact");
+
+        contactColumn.setSortable(true);
+        columnSortHandler.setComparator(contactColumn, new Comparator<Owner>(){
+            public int compare(Owner o1, Owner o2) {
+                return o1.getContact().compareToIgnoreCase(o2.getContact());
+            }
+        });
 
         // OWNER TYPE COLUMN
         TextColumn<Owner> typeColumn = new TextColumn<Owner>() {
@@ -137,18 +148,18 @@ public class GetFacilityOwners implements JsonCallback, JsonCallbackTable<Owner>
                 return Owner.getTranslatedType(o1.getType()).compareToIgnoreCase(Owner.getTranslatedType(o2.getType()));
             }
         });
-		
-		return table;
 
-	}
+        return table;
 
-	/**
-	 * Retrieve data from RPC
-	 */
-	public void retrieveData() {
-		JsonClient js = new JsonClient();
-		js.retrieveData(JSON_URL, "facility="+facility.getId(), this);
-	}
+    }
+
+    /**
+     * Retrieve data from RPC
+     */
+    public void retrieveData() {
+        JsonClient js = new JsonClient();
+        js.retrieveData(JSON_URL, "facility="+facility.getId(), this);
+    }
 
     /**
      * Sorts table by objects date
@@ -166,6 +177,9 @@ public class GetFacilityOwners implements JsonCallback, JsonCallbackTable<Owner>
      */
     public void addToTable(Owner object) {
         list.add(object);
+        oracle.add(object.getName());
+        oracle.add(object.getContact());
+        oracle.add(Owner.getTranslatedType(object.getType()));
         dataProvider.flush();
         dataProvider.refresh();
     }
@@ -188,6 +202,7 @@ public class GetFacilityOwners implements JsonCallback, JsonCallbackTable<Owner>
     public void clearTable(){
         loaderImage.loadingStart();
         list.clear();
+        oracle.clear();
         selectionModel.clear();
         dataProvider.flush();
         dataProvider.refresh();
@@ -240,6 +255,9 @@ public class GetFacilityOwners implements JsonCallback, JsonCallbackTable<Owner>
 
     public void insertToTable(int index, Owner object) {
         list.add(index, object);
+        oracle.add(object.getName());
+        oracle.add(object.getContact());
+        oracle.add(Owner.getTranslatedType(object.getType()));
         dataProvider.flush();
         dataProvider.refresh();
     }
@@ -255,12 +273,58 @@ public class GetFacilityOwners implements JsonCallback, JsonCallbackTable<Owner>
     public void setList(ArrayList<Owner> list) {
         clearTable();
         this.list.addAll(list);
+        for (Owner o : list) {
+            oracle.add(o.getName());
+            oracle.add(o.getContact());
+            oracle.add(Owner.getTranslatedType(o.getType()));
+        }
         dataProvider.flush();
         dataProvider.refresh();
     }
 
     public ArrayList<Owner> getList() {
         return this.list;
+    }
+
+    @Override
+    public void filterTable(String filter) {
+
+        // store list only for first time
+        if (backupList.isEmpty() || backupList == null) {
+            backupList.addAll(list);
+        }
+
+        // always clear selected items
+        selectionModel.clear();
+        list.clear();
+
+        if (filter.equalsIgnoreCase("")) {
+            list.addAll(backupList);
+        } else {
+            for (Owner o: backupList){
+                // store owner by filter
+                if (o.getName().toLowerCase().startsWith(filter.toLowerCase()) ||
+                        o.getContact().toLowerCase().startsWith(filter.toLowerCase()) ||
+                        Owner.getTranslatedType(o.getType()).toLowerCase().startsWith(Owner.getTranslatedType(filter).toLowerCase())) {
+                    list.add(o);
+                }
+            }
+        }
+
+        loaderImage.loadingFinished();
+        dataProvider.flush();
+        dataProvider.refresh();
+
+    }
+
+    @Override
+    public UnaccentMultiWordSuggestOracle getOracle() {
+        return this.oracle;
+    }
+
+    @Override
+    public void setOracle(UnaccentMultiWordSuggestOracle oracle) {
+        this.oracle = oracle;
     }
 
 }

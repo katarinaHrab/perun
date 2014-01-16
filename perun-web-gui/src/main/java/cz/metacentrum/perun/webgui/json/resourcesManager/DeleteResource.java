@@ -3,8 +3,8 @@ package cz.metacentrum.perun.webgui.json.resourcesManager;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.json.client.JSONNumber;
 import com.google.gwt.json.client.JSONObject;
-import com.google.gwt.user.client.Window;
 import cz.metacentrum.perun.webgui.client.PerunWebSession;
+import cz.metacentrum.perun.webgui.client.UiElements;
 import cz.metacentrum.perun.webgui.json.JsonCallbackEvents;
 import cz.metacentrum.perun.webgui.json.JsonPostClient;
 import cz.metacentrum.perun.webgui.model.PerunError;
@@ -13,7 +13,7 @@ import cz.metacentrum.perun.webgui.model.PerunError;
  * Ajax query for deleting resource
  * 
  * @author Pavel Zlamal <256627@mail.muni.cz>
- * @version $Id$
+ * @version $Id: $
  */
 
 public class DeleteResource {
@@ -52,12 +52,12 @@ public class DeleteResource {
 		String errorMsg = "";
 
 		if(resourceId == 0){
-			errorMsg += "Wrong parametr resource ID'.\n";
+			errorMsg += "Wrong parameter 'resource ID'";
 			result = false;
 		}
 
 		if(errorMsg.length()>0){
-			Window.alert(errorMsg);
+            UiElements.generateAlert("Parameter error", errorMsg);
 		}
 
 		return result;
@@ -104,8 +104,7 @@ public class DeleteResource {
 	 * Prepares a JSON object
 	 * @return JSONObject the whole query
 	 */
-	private JSONObject prepareJSONObject()
-	{
+	private JSONObject prepareJSONObject() {
 		JSONObject jsonQuery = new JSONObject();
 		jsonQuery.put("resource", new JSONNumber(resourceId));
 		return jsonQuery;

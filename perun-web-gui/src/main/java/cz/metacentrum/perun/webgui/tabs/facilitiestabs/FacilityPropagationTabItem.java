@@ -27,7 +27,10 @@ import cz.metacentrum.perun.webgui.model.Facility;
 import cz.metacentrum.perun.webgui.model.PerunError;
 import cz.metacentrum.perun.webgui.model.RichService;
 import cz.metacentrum.perun.webgui.model.Service;
-import cz.metacentrum.perun.webgui.tabs.*;
+import cz.metacentrum.perun.webgui.tabs.FacilitiesTabs;
+import cz.metacentrum.perun.webgui.tabs.TabItem;
+import cz.metacentrum.perun.webgui.tabs.TabItemWithUrl;
+import cz.metacentrum.perun.webgui.tabs.UrlMapper;
 import cz.metacentrum.perun.webgui.tabs.servicestabs.ServiceExecServicesTabItem;
 import cz.metacentrum.perun.webgui.widgets.Confirm;
 import cz.metacentrum.perun.webgui.widgets.CustomButton;
@@ -223,17 +226,17 @@ public class FacilityPropagationTabItem implements TabItem, TabItemWithUrl{
                         // which part ?
                         if (servPart.getSelectedIndex() == 0) {
                             // both parts
-                            request.banExecService(list.get(i).getGenExecService().getId());
+                            if (list.get(i).getGenExecService() != null) request.banExecService(list.get(i).getGenExecService().getId());
                             if (i == list.size()-1) { request.setEvents(events); }
-                            request.banExecService(list.get(i).getSendExecService().getId());
+                            if (list.get(i).getSendExecService() != null) request.banExecService(list.get(i).getSendExecService().getId());
                         } else if (servPart.getSelectedIndex() == 1) {
                             // just generate
                             if (i == list.size()-1) { request.setEvents(events); }
-                            request.banExecService(list.get(i).getGenExecService().getId());
+                            if (list.get(i).getGenExecService() != null) request.banExecService(list.get(i).getGenExecService().getId());
                         } else if (servPart.getSelectedIndex() == 2) {
                             // just send
                             if (i == list.size()-1) { request.setEvents(events); }
-                            request.banExecService(list.get(i).getSendExecService().getId());
+                            if (list.get(i).getSendExecService() != null) request.banExecService(list.get(i).getSendExecService().getId());
                         }
                     }
                 }
@@ -264,17 +267,17 @@ public class FacilityPropagationTabItem implements TabItem, TabItemWithUrl{
                         // which part ?
                         if (servPart.getSelectedIndex() == 0) {
                             // both parts
-                            request.freeDenialOfExecService(list.get(i).getGenExecService().getId());
+                            if (list.get(i).getGenExecService() != null) request.freeDenialOfExecService(list.get(i).getGenExecService().getId());
                             if (i == list.size()-1) { request.setEvents(events); }
-                            request.freeDenialOfExecService(list.get(i).getSendExecService().getId());
+                            if (list.get(i).getSendExecService() != null) request.freeDenialOfExecService(list.get(i).getSendExecService().getId());
                         } else if (servPart.getSelectedIndex() == 1) {
                             // just generate
                             if (i == list.size()-1) { request.setEvents(events); }
-                            request.freeDenialOfExecService(list.get(i).getGenExecService().getId());
+                            if (list.get(i).getGenExecService() != null) request.freeDenialOfExecService(list.get(i).getGenExecService().getId());
                         } else if (servPart.getSelectedIndex() == 2) {
                             // just send
                             if (i == list.size()-1) { request.setEvents(events); }
-                            request.freeDenialOfExecService(list.get(i).getSendExecService().getId());
+                            if (list.get(i).getSendExecService() != null) request.freeDenialOfExecService(list.get(i).getSendExecService().getId());
                         }
                     }
                 }
@@ -348,8 +351,7 @@ public class FacilityPropagationTabItem implements TabItem, TabItemWithUrl{
         return false;
     }
 
-    public void open()
-    {
+    public void open() {
         session.getUiElements().getMenu().openMenu(MainMenu.FACILITY_ADMIN);
         session.getUiElements().getBreadcrumbs().setLocation(facility, "Services propagation", getUrlWithParameters());
         if(facility != null) {
@@ -360,13 +362,11 @@ public class FacilityPropagationTabItem implements TabItem, TabItemWithUrl{
     }
 
     public boolean isAuthorized() {
-
         if (session.isFacilityAdmin(facility.getId())) {
             return true;
         } else {
             return false;
         }
-
     }
 
     public final static String URL = "srvprop";
@@ -376,19 +376,16 @@ public class FacilityPropagationTabItem implements TabItem, TabItemWithUrl{
         return URL;
     }
 
-    public String getUrlWithParameters()
-    {
+    public String getUrlWithParameters() {
         return FacilitiesTabs.URL + UrlMapper.TAB_NAME_SEPARATOR + getUrl() + "?id=" + facilityId;
     }
 
-    static public FacilityPropagationTabItem load(Map<String, String> parameters)
-    {
+    static public FacilityPropagationTabItem load(Map<String, String> parameters) {
         int fid = Integer.parseInt(parameters.get("id"));
         return new FacilityPropagationTabItem(fid);
     }
 
-    static public FacilityPropagationTabItem load(Facility fac)
-    {
+    static public FacilityPropagationTabItem load(Facility fac) {
         return new FacilityPropagationTabItem(fac);
     }
 

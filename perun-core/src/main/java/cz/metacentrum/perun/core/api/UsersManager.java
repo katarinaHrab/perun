@@ -10,7 +10,7 @@ import cz.metacentrum.perun.core.api.exceptions.*;
  * @author Michal Prochazka
  * @author Slavek Licehammer
  * @author Zora Sebestianova
- * @version $Id$
+ * @version $Id: c4cf29067c1bec2fc500f38adee7f334da2c74ee $
  */
 public interface UsersManager {
 
@@ -256,7 +256,7 @@ public interface UsersManager {
    * @throws RelationExistsException if user has some members assigned
    * @throws MemberAlreadyRemovedException if there is at least 1 member deleted but not affected by deleting from DB
    * @throws UserAlreadyRemovedException if there are no rows affected by deleting user in DB
-   * @throws ServiceUserAlreadyRemovedExceptionif there are no rows affected  by deleting serviceUser in DB
+   * @throws ServiceUserAlreadyRemovedException if there are no rows affected  by deleting serviceUser in DB
    */
   void deleteUser(PerunSession perunSession, User user) throws InternalErrorException, UserNotExistsException, PrivilegeException, RelationExistsException, MemberAlreadyRemovedException, UserAlreadyRemovedException, ServiceUserAlreadyRemovedException;
 
@@ -271,7 +271,7 @@ public interface UsersManager {
    * @throws RelationExistsException if forceDelete is false and the user has some members assigned
    * @throws MemberAlreadyRemovedException if there is at least 1 member deleted but not affected by deleting from DB
    * @throws UserAlreadyRemovedException if there are no rows affected by deleting user in DB
-   * @throws ServiceUserAlreadyRemovedExceptionif there are no rows affected  by deleting serviceUser in DB
+   * @throws ServiceUserAlreadyRemovedException if there are no rows affected  by deleting serviceUser in DB
    */
   void deleteUser(PerunSession perunSession, User user, boolean forceDelete) throws InternalErrorException, UserNotExistsException, PrivilegeException, RelationExistsException, MemberAlreadyRemovedException, UserAlreadyRemovedException, ServiceUserAlreadyRemovedException;
 
@@ -419,7 +419,6 @@ public interface UsersManager {
    * Get all resources which have the user access on.
    * 
    * @param sess
-   * @param facility
    * @param user
    * @return list of resources which have the user acess on
    * 
@@ -430,6 +429,19 @@ public interface UsersManager {
   List<Resource> getAllowedResources(PerunSession sess, User user) throws InternalErrorException, UserNotExistsException, PrivilegeException;
 
   /**
+   * Get all rich resources which have the user assigned.
+   *
+   * @param sess
+   * @param user
+   * @return list of rich resources which have the user assigned
+   *
+   * @throws InternalErrorException
+   * @throws UserNotExistsException
+   * @throws PrivilegeException
+   */
+  List<RichResource> getAssignedRichResources(PerunSession sess, User user) throws InternalErrorException, UserNotExistsException, PrivilegeException;
+
+    /**
    * Returns list of users who matches the searchString, searching name, email, logins.
    * 
    * @param sess
@@ -595,7 +607,7 @@ public interface UsersManager {
    * @param loginNamespace
    * @param oldPassword
    * @param newPassword
-   * @param checkOldPassword.
+   * @param checkOldPassword
    * @throws InternalErrorException
    * @throws PrivilegeException
    * @throws UserNotExistsException
@@ -643,7 +655,6 @@ public interface UsersManager {
    * @param sess
    * @param user
    * @param loginNamespace
-   * @param password
    * @throws InternalErrorException
    * @throws PasswordCreationFailedException
    * @throws UserNotExistsException

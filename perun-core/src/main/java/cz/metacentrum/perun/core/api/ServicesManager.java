@@ -30,7 +30,7 @@ import cz.metacentrum.perun.core.api.exceptions.VoNotExistsException;
  * ServicesManager's functionality is going to be encapsulated in the Controller's
  * GeneralServiceManager.
  * 
- * @version $Id$
+ * @version $Id: 06e308cdd66f21e577d886040b22894ab12e4cc1 $
  */
 public interface ServicesManager {
   
@@ -412,20 +412,20 @@ public interface ServicesManager {
    * @throws InternalErrorException if an exception raise in concrete implementation, the exception is wrapped in InternalErrorException
    * @throws PrivilegeException if privileges are not given
    * @throws AttributeNotExistsException if the attribute doesn't exists in underlaying data source
-   * @throws ServiceNotExistsExceptionif if the service doesn't exists in underlaying data source
+   * @throws ServiceNotExistsException if the service doesn't exists in underlaying data source
    * @throws AttributeAlreadyAssignedException if the attribute is already added
    */
   void addRequiredAttribute(PerunSession perunSession, Service service, AttributeDefinition attribute) throws PrivilegeException, InternalErrorException, AttributeNotExistsException, ServiceNotExistsException, AttributeAlreadyAssignedException;
 
   /**
    *  Batch version of addRequiredAttribute
-   *  @see cz.metacentrum.perun.core.api.ServicesManager#addRequiredAttribute(PerunSession,Service,Attribute)
+   *  @see cz.metacentrum.perun.core.api.ServicesManager#addRequiredAttribute(PerunSession,Service,AttributeDefinition)
    */
   void addRequiredAttributes(PerunSession perunSession, Service service, List<? extends AttributeDefinition> attributes) throws PrivilegeException, InternalErrorException, AttributeNotExistsException, ServiceNotExistsException, AttributeAlreadyAssignedException;
 
   /**
    * Remove required attribute from service. 
-   * TODO If you try to remove attribute which is default for othed Required attribute ...
+   * TODO If you try to remove attribute which is default for other Required attribute ...
    * 
    * @param perunSession perunSession
    * @param service service from which the attribute will be removed
@@ -435,13 +435,13 @@ public interface ServicesManager {
    * @throws PrivilegeException if privileges are not given
    * @throws AttributeNotExistsException 
    * @throws AttributeNotAssignedException
-   * @throws ServiceNotExistsExceptionif if the service doesn't exists in underlaying data source
+   * @throws ServiceNotExistsException if the service doesn't exists in underlaying data source
    */
   void removeRequiredAttribute(PerunSession perunSession, Service service, AttributeDefinition attribute) throws PrivilegeException, InternalErrorException, AttributeNotExistsException, ServiceNotExistsException, AttributeNotAssignedException;
 
   /**
    *  Batch version of removeRequiredAttribute
-   *  @see cz.metacentrum.perun.core.api.ServicesManager#removeRequiredAttribute(PerunSession,Service,Attribute)
+   *  @see cz.metacentrum.perun.core.api.ServicesManager#removeRequiredAttribute(PerunSession,Service,AttributeDefinition)
    */
   void removeRequiredAttributes(PerunSession perunSession, Service service, List<? extends AttributeDefinition> attributes) throws PrivilegeException, InternalErrorException, AttributeNotExistsException, ServiceNotExistsException, AttributeNotAssignedException;
 
@@ -453,7 +453,7 @@ public interface ServicesManager {
    * 
    * @throws InternalErrorException if an exception raise in concrete implementation, the exception is wrapped in InternalErrorException
    * @throws PrivilegeException if privileges are not given
-   * @throws ServiceNotExistsExceptionif if the service doesn't exists in underlaying data source
+   * @throws ServiceNotExistsException if the service doesn't exists in underlaying data source
    */
   void removeAllRequiredAttributes(PerunSession perunSession, Service service) throws PrivilegeException, InternalErrorException, ServiceNotExistsException;
 
@@ -474,6 +474,22 @@ public interface ServicesManager {
   Destination addDestination(PerunSession perunSession, Service service, Facility facility, Destination destination) throws PrivilegeException, InternalErrorException, ServiceNotExistsException, FacilityNotExistsException, DestinationAlreadyAssignedException;
 
   /**
+   * Adds an destination for the facility and all services. Destination id doesn't need to be filled. If destination doesn't exist it will be created.
+   * 
+   * @param perunSession
+   * @param services
+   * @param facility
+   * @param destination (id of this destination doesn't need to be filled.)
+   * @return destination with it's id set
+   * @throws PrivilegeException
+   * @throws InternalErrorException
+   * @throws ServiceNotExistsException
+   * @throws FacilityNotExistsException
+   * @throws DestinationAlreadyAssignedException 
+   */
+  Destination addDestination(PerunSession perunSession, List<Service> services, Facility facility, Destination destination) throws PrivilegeException, InternalErrorException, ServiceNotExistsException, FacilityNotExistsException, DestinationAlreadyAssignedException;
+  
+  /**
    * Adds destination for all services defined on the facility.
    * 
    * @param perunSession
@@ -493,7 +509,6 @@ public interface ServicesManager {
    * @param perunSession
    * @param service
    * @param facility
-   * @param destination
    * @return list of added destinations
    * @throws PrivilegeException
    * @throws InternalErrorException
@@ -503,6 +518,53 @@ public interface ServicesManager {
    * @throws ClusterNotExistsException
    */
   List<Destination> addDestinationsDefinedByHostsOnCluster(PerunSession perunSession, Service service, Facility facility) throws PrivilegeException, InternalErrorException, ServiceNotExistsException, FacilityNotExistsException, DestinationAlreadyAssignedException, ClusterNotExistsException;
+  
+  /**
+   * Defines service destination for all hosts using theirs hostnames.
+   * 
+   * @param perunSession
+   * @param service
+   * @param facility
+   * @return list of added destinations
+   * @throws PrivilegeException
+   * @throws InternalErrorException
+   * @throws ServiceNotExistsException
+   * @throws FacilityNotExistsException
+   * @throws DestinationAlreadyAssignedException 
+   */
+  List<Destination> addDestinationsDefinedByHostsOnFacility(PerunSession perunSession, Service service, Facility facility) throws PrivilegeException, InternalErrorException, ServiceNotExistsException, FacilityNotExistsException, DestinationAlreadyAssignedException;
+  
+  /**
+   * Defines services destination for all hosts using their hostnames.
+   * Do it for all services in List.
+   * 
+   * If some destination for service and facility already exist, do not create it but still return back in the list.
+   * 
+   * @param perunSession
+   * @param services
+   * @param facility
+   * @return list of added destiniations (even if they alredy was adedded before)
+   * @throws PrivilegeException
+   * @throws InternalErrorException
+   * @throws ServiceNotExistsException
+   * @throws FacilityNotExistsException 
+   */
+  List<Destination> addDestinationsDefinedByHostsOnFacility(PerunSession perunSession, List<Service> services, Facility facility) throws PrivilegeException, InternalErrorException, ServiceNotExistsException, FacilityNotExistsException;
+  
+  /**
+   * Defines services destiniation for all hosts using their hostnames.
+   * Use all assigned services to resources for the facility.
+   * 
+   * If some destination for service and facility already exist, do not create it but still return back in the list.
+   * 
+   * @param perunSession
+   * @param facility
+   * @return list of added destiniations (even if they alredy was adedded before)
+   * @throws PrivilegeException
+   * @throws InternalErrorException
+   * @throws FacilityNotExistsException 
+   */
+  List<Destination> addDestinationsDefinedByHostsOnFacility(PerunSession perunSession, Facility facility) throws PrivilegeException, InternalErrorException, FacilityNotExistsException;
   
   /**
    * Removes an destination from the facility and service.

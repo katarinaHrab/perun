@@ -10,11 +10,9 @@ import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
 import com.google.gwt.user.cellview.client.Header;
 import com.google.gwt.user.cellview.client.RowStyles;
-import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.view.client.DefaultSelectionEventManager;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
-import cz.metacentrum.perun.webgui.client.PerunWebConstants;
 import cz.metacentrum.perun.webgui.client.PerunWebSession;
 import cz.metacentrum.perun.webgui.client.resources.TableSorter;
 import cz.metacentrum.perun.webgui.json.*;
@@ -22,8 +20,9 @@ import cz.metacentrum.perun.webgui.json.keyproviders.GeneralKeyProvider;
 import cz.metacentrum.perun.webgui.model.Group;
 import cz.metacentrum.perun.webgui.model.PerunError;
 import cz.metacentrum.perun.webgui.widgets.AjaxLoaderImage;
-import cz.metacentrum.perun.webgui.widgets.cells.PerunCheckboxCell;
 import cz.metacentrum.perun.webgui.widgets.PerunTable;
+import cz.metacentrum.perun.webgui.widgets.UnaccentMultiWordSuggestOracle;
+import cz.metacentrum.perun.webgui.widgets.cells.PerunCheckboxCell;
 
 import java.util.ArrayList;
 
@@ -32,7 +31,7 @@ import java.util.ArrayList;
  * 
  * @author Vaclav Mach <374430@mail.muni.cz>
  * @author Pavel Zlamal <256627@mail.muni.cz>
- * @version $Id$
+ * @version $Id: 0414f62c24d92793accb99a4c248bcdbac7e0d8d $
  */
 public class GetAllGroups implements JsonCallback, JsonCallbackTable<Group>, JsonCallbackOracle<Group> {
 
@@ -57,7 +56,7 @@ public class GetAllGroups implements JsonCallback, JsonCallbackTable<Group>, Jso
 	// loader image
 	private AjaxLoaderImage loaderImage = new AjaxLoaderImage();
 	// oracle
-	private MultiWordSuggestOracle oracle = new MultiWordSuggestOracle();
+	private UnaccentMultiWordSuggestOracle oracle = new UnaccentMultiWordSuggestOracle(":");
 	private ArrayList<Group> fullBackup = new ArrayList<Group>();
 	// checkable core groups
 	private boolean coreGroupsCheckable = false;
@@ -313,43 +312,38 @@ public class GetAllGroups implements JsonCallback, JsonCallbackTable<Group>, Jso
         return this.list;
     }
 
-	public MultiWordSuggestOracle getOracle(){
+	public UnaccentMultiWordSuggestOracle getOracle(){
 		return this.oracle;
 	}
 	
 	public void filterTable(String text){
 
-		// always clear selected items
-		selectionModel.clear();
-		
 		// store list only for first time
 		if (fullBackup.isEmpty() || fullBackup == null) {
-			for (Group grp : getList()){
-				fullBackup.add(grp);
-			}	
+			fullBackup.addAll(list);
 		}
-        getList().clear();
+
+        // always clear selected items
+        selectionModel.clear();
+        list.clear();
+
         if (text.equalsIgnoreCase("")) {
-			for (Group g : fullBackup) {
-                list.add(g);
-            }
+			list.addAll(fullBackup);
 		} else {
 			for (Group grp : fullBackup){
 				// store facility by filter
-				if (grp.getName().toLowerCase().startsWith(text.toLowerCase())) {
+                if (grp.getName().toLowerCase().startsWith(text.toLowerCase()) ||
+                        grp.getName().toLowerCase().contains(":"+text.toLowerCase())) {
 					list.add(grp);
 				}
-			}
-			if (getList().isEmpty()) {
-				loaderImage.loadingFinished();
 			}
 		}
         dataProvider.flush();
         dataProvider.refresh();
-
+        loaderImage.loadingFinished();
 	}
 
-	public void setOracle(MultiWordSuggestOracle oracle) {
+	public void setOracle(UnaccentMultiWordSuggestOracle oracle) {
 		this.oracle = oracle;
 	}
 
@@ -369,6 +363,10 @@ public class GetAllGroups implements JsonCallback, JsonCallbackTable<Group>, Jso
 
     public void setVoId(int voId) {
         this.voId = voId;
+    }
+
+    public MultiSelectionModel<Group> getSelectionModel() {
+        return this.selectionModel;
     }
 	
 }

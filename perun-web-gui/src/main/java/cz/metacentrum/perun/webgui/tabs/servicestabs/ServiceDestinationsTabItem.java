@@ -24,12 +24,13 @@ import cz.metacentrum.perun.webgui.model.Destination;
 import cz.metacentrum.perun.webgui.model.Facility;
 import cz.metacentrum.perun.webgui.model.PerunError;
 import cz.metacentrum.perun.webgui.model.Service;
-import cz.metacentrum.perun.webgui.tabs.*;
+import cz.metacentrum.perun.webgui.tabs.ServicesTabs;
+import cz.metacentrum.perun.webgui.tabs.TabItem;
+import cz.metacentrum.perun.webgui.tabs.TabItemWithUrl;
+import cz.metacentrum.perun.webgui.tabs.UrlMapper;
 import cz.metacentrum.perun.webgui.tabs.facilitiestabs.AddFacilityDestinationTabItem;
-import cz.metacentrum.perun.webgui.widgets.AjaxLoaderImage;
+import cz.metacentrum.perun.webgui.widgets.*;
 import cz.metacentrum.perun.webgui.widgets.CustomButton;
-import cz.metacentrum.perun.webgui.widgets.ListBoxWithObjects;
-import cz.metacentrum.perun.webgui.widgets.TabMenu;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -59,8 +60,7 @@ public class ServiceDestinationsTabItem implements TabItem, TabItemWithUrl{
 	 * Title widget
 	 */
 	private Label titleWidget = new Label("Manage destinations");
-	
-	
+
 	// data
 	private Service service;
 	private int serviceId;
@@ -112,7 +112,7 @@ public class ServiceDestinationsTabItem implements TabItem, TabItemWithUrl{
 		vp.setCellHeight(menu, "30px");
 
 		// buttons 
-		CustomButton addDestButton = TabMenu.getPredefinedButton(ButtonType.ADD, ButtonTranslation.INSTANCE.addDestination());
+		final CustomButton addDestButton = TabMenu.getPredefinedButton(ButtonType.ADD, ButtonTranslation.INSTANCE.addDestination());
         final CustomButton removeDestButton = TabMenu.getPredefinedButton(ButtonType.REMOVE, ButtonTranslation.INSTANCE.removeSelectedDestinations());
 
         menu.addWidget(addDestButton);
@@ -184,15 +184,18 @@ public class ServiceDestinationsTabItem implements TabItem, TabItemWithUrl{
                     ls.setItemSelected(0, true);
                 } else {
                     // was selected
+                    addDestButton.setEnabled(true);
                     refreshEvents.onFinished(null);
                 }
 			}
 			public void onError(PerunError error){
 				ls.addItem("Error while loading");
+                addDestButton.setEnabled(false);
 			}
             public void onLoadingStart(){
                 ls.clear();
                 ls.addItem("Loading...");
+                addDestButton.setEnabled(false);
             }
 		};
 		final GetAssignedFacilities assignedFacilities = new GetAssignedFacilities(PerunEntity.SERVICE, serviceId, events);
@@ -204,8 +207,10 @@ public class ServiceDestinationsTabItem implements TabItem, TabItemWithUrl{
 			public void onChange(ChangeEvent event) {
                 if (ls.getSelectedIndex() > 0) {
                     // store last selected facility id
+                    addDestButton.setEnabled(true);
                     lastSelectedFacilityId = ls.getSelectedObject().getId();
                 } else {
+                    addDestButton.setEnabled(false);
                     lastSelectedFacilityId = 0;
                 }
                 refreshEvents.onFinished(null);
@@ -216,13 +221,7 @@ public class ServiceDestinationsTabItem implements TabItem, TabItemWithUrl{
 		
 		addDestButton.addClickHandler(new ClickHandler(){
 			public void onClick(ClickEvent event) {
-				if (ls.getSelectedIndex() > 0) {
-					// for 1 facility
-					session.getTabManager().addTabToCurrentTab(new AddFacilityDestinationTabItem(ls.getSelectedObject()));
-				} else {
-                    UiElements.generateAlert("No facility selected", "You must select a facility first.");
-					return;
-				}	
+				session.getTabManager().addTabToCurrentTab(new AddFacilityDestinationTabItem(ls.getSelectedObject()));
 			}
 		});
 		
@@ -249,7 +248,7 @@ public class ServiceDestinationsTabItem implements TabItem, TabItemWithUrl{
 		});
 		
 		// filter box
-		menu.addFilterWidget(new SuggestBox(callback.getOracle()), new PerunSearchEvent() {
+		menu.addFilterWidget(new ExtendedSuggestBox(callback.getOracle()), new PerunSearchEvent() {
             public void searchFor(String text) {
                 callback.filterTable(text);
             }

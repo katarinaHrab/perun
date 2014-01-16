@@ -5,7 +5,6 @@ import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
 import com.google.gwt.user.cellview.client.TextColumn;
-import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.view.client.DefaultSelectionEventManager;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
@@ -19,6 +18,7 @@ import cz.metacentrum.perun.webgui.model.PerunError;
 import cz.metacentrum.perun.webgui.model.Service;
 import cz.metacentrum.perun.webgui.widgets.AjaxLoaderImage;
 import cz.metacentrum.perun.webgui.widgets.PerunTable;
+import cz.metacentrum.perun.webgui.widgets.UnaccentMultiWordSuggestOracle;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -29,7 +29,6 @@ import java.util.Comparator;
  * @author Pavel Zlamal <256627@mail.muni.cz>
  * @version $Id: 96e0726384e9a35f4ffab2d462ea9dc1600c6644 $
  */
-
 public class GetAllRichDestinations implements JsonCallback, JsonCallbackTable<Destination>, JsonCallbackOracle<Destination> {
 
 	// session
@@ -51,7 +50,7 @@ public class GetAllRichDestinations implements JsonCallback, JsonCallbackTable<D
 	private boolean showServ = true; // display service column by default
 	private boolean checkable = true;
 	// oracle support
-	private MultiWordSuggestOracle oracle = new MultiWordSuggestOracle();
+	private UnaccentMultiWordSuggestOracle oracle = new UnaccentMultiWordSuggestOracle();
 	private ArrayList<Destination> fullBackup = new ArrayList<Destination>();
 
 	/**
@@ -404,47 +403,44 @@ public class GetAllRichDestinations implements JsonCallback, JsonCallbackTable<D
 
 	public void filterTable(String text){
 
+        // store list only for first time
+        if (fullBackup.isEmpty() || fullBackup == null) {
+            fullBackup.addAll(list);
+        }
+
 		// always clear selected items
 		selectionModel.clear();
-		
-		// store list only for first time
-		if (fullBackup.isEmpty() || fullBackup == null) {
-			for (Destination dst : getList()){
-				fullBackup.add(dst);
-			}	
-		}
+        list.clear();
+
 		if (text.equalsIgnoreCase("")) {
-			setList(fullBackup);
+			list.addAll(fullBackup);
 		} else {
-			getList().clear();
 			for (Destination dst : fullBackup){
 				// store facility by filter
 				if (service == null) {
 					if (dst.getDestination().toLowerCase().startsWith(text.toLowerCase()) || dst.getService().getName().toLowerCase().startsWith(text.toLowerCase())) {
-						addToTable(dst);
+						list.add(dst);
 					}	
 				} else {
 					if (dst.getDestination().toLowerCase().startsWith(text.toLowerCase()) || dst.getFacility().getName().toLowerCase().startsWith(text.toLowerCase())) {
-						addToTable(dst);
+						list.add(dst);
 					}	
 				}
 			}
-			if (getList().isEmpty()) {
-				loaderImage.loadingFinished();
-			}
-            dataProvider.flush();
-            dataProvider.refresh();
+
 		}
 
+        dataProvider.flush();
+        dataProvider.refresh();
         loaderImage.loadingFinished();
 		
 	}
 
-	public MultiWordSuggestOracle getOracle() {
+	public UnaccentMultiWordSuggestOracle getOracle() {
 		return this.oracle;
 	}
 
-	public void setOracle(MultiWordSuggestOracle oracle) {
+	public void setOracle(UnaccentMultiWordSuggestOracle oracle) {
 		this.oracle = oracle;
 	}
 

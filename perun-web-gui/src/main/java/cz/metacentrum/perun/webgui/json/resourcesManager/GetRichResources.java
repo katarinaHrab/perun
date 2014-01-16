@@ -5,7 +5,6 @@ import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
-import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.view.client.DefaultSelectionEventManager;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
@@ -14,9 +13,11 @@ import cz.metacentrum.perun.webgui.client.resources.TableSorter;
 import cz.metacentrum.perun.webgui.json.*;
 import cz.metacentrum.perun.webgui.json.keyproviders.GeneralKeyProvider;
 import cz.metacentrum.perun.webgui.model.PerunError;
+import cz.metacentrum.perun.webgui.model.ResourceTag;
 import cz.metacentrum.perun.webgui.model.RichResource;
 import cz.metacentrum.perun.webgui.widgets.AjaxLoaderImage;
 import cz.metacentrum.perun.webgui.widgets.PerunTable;
+import cz.metacentrum.perun.webgui.widgets.UnaccentMultiWordSuggestOracle;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -25,7 +26,7 @@ import java.util.Comparator;
  * Axaj query to get Rich Resources for VO
  * 
  * @author Pavel Zlamal <256627@mail.muni.cz>
- * @version $Id$
+ * @version $Id: 22903139669d5eff4707b6be8bf617ee3e626765 $
  */
 public class GetRichResources implements JsonCallback, JsonCallbackTable<RichResource>, JsonCallbackOracle<RichResource> {
 
@@ -51,7 +52,7 @@ public class GetRichResources implements JsonCallback, JsonCallbackTable<RichRes
 	private AjaxLoaderImage loaderImage = new AjaxLoaderImage();
 	// oracle support
 	private ArrayList<RichResource> fullBackup = new ArrayList<RichResource>();
-	private MultiWordSuggestOracle oracle = new MultiWordSuggestOracle();
+	private UnaccentMultiWordSuggestOracle oracle = new UnaccentMultiWordSuggestOracle();
 	
 	private boolean checkable = true;
 
@@ -121,21 +122,45 @@ public class GetRichResources implements JsonCallback, JsonCallbackTable<RichRes
 		table.addIdColumn("Resource ID", tableFieldUpdater);
 		table.addNameColumn(tableFieldUpdater);
 
-		// FACILITY COLUMN
-		Column<RichResource, String> facilityColumn = JsonUtils.addColumn(
+        // FACILITY COLUMN
+        Column<RichResource, String> facilityColumn = JsonUtils.addColumn(
+                new JsonUtils.GetValue<RichResource, String>() {
+                    public String getValue(RichResource object) {
+                        return object.getFacility().getName() + " - " + object.getFacility().getType();
+                    }
+                }, tableFieldUpdater);
+
+        facilityColumn.setSortable(true);
+        columnSortHandler.setComparator(facilityColumn, new Comparator<RichResource>(){
+            public int compare(RichResource arg0, RichResource arg1) {
+                return (arg0.getFacility().getName() + " - " + arg0.getFacility().getType()).compareToIgnoreCase(arg1.getFacility().getName() + " - " + arg1.getFacility().getType());
+            }
+        });
+        table.addColumn(facilityColumn, "Facility - Type");
+
+		// TAGS COLUMN
+		Column<RichResource, String> tagsColumn = JsonUtils.addColumn(
                 new JsonUtils.GetValue<RichResource, String>() {
 					public String getValue(RichResource object) {
-						return object.getFacility().getName() + " - " + object.getFacility().getType();
+
+                        ArrayList<ResourceTag> tags = object.getResourceTags();
+                        if (tags != null && !tags.isEmpty()) {
+                            String s = "";
+                            tags = new TableSorter<ResourceTag>().sortByName(tags);
+                            for (ResourceTag tag : tags) {
+                                s += tag.getName() + ", ";
+                            }
+                            s = s.substring(0, s.length()-2);
+                            return s;
+                        } else {
+                            return "";
+                        }
 					}
 				}, tableFieldUpdater);
 
-		facilityColumn.setSortable(true);
-		columnSortHandler.setComparator(facilityColumn, new Comparator<RichResource>(){
-			public int compare(RichResource arg0, RichResource arg1) {
-				return (arg0.getFacility().getName() + " - " + arg0.getFacility().getType()).compareToIgnoreCase(arg1.getFacility().getName() + " - " + arg1.getFacility().getType());
-			}
-		});
-		table.addColumn(facilityColumn, "Facility - Type");
+        // TODO - sorting
+		table.addColumn(tagsColumn, "Tags");
+        table.setColumnWidth(tagsColumn, "200px");
 				
 		table.addDescriptionColumn(tableFieldUpdater);
 
@@ -169,6 +194,9 @@ public class GetRichResources implements JsonCallback, JsonCallbackTable<RichRes
     public void addToTable(RichResource object) {
         list.add(object);
         oracle.add(object.getName());
+        for (ResourceTag rt : object.getResourceTags()) {
+            oracle.add(rt.getName()+" (tag)");
+        }
         dataProvider.flush();
         dataProvider.refresh();
     }
@@ -244,6 +272,9 @@ public class GetRichResources implements JsonCallback, JsonCallbackTable<RichRes
     public void insertToTable(int index, RichResource object) {
         list.add(index, object);
         oracle.add(object.getName());
+        for (ResourceTag rt : object.getResourceTags()) {
+            oracle.add(rt.getName()+" (tag)");
+        }
         dataProvider.flush();
         dataProvider.refresh();
     }
@@ -261,6 +292,9 @@ public class GetRichResources implements JsonCallback, JsonCallbackTable<RichRes
         this.list.addAll(list);
         for (RichResource r : list) {
             oracle.add(r.getName());
+            for (ResourceTag rt : r.getResourceTags()) {
+                oracle.add(rt.getName()+" (tag)");
+            }
         }
         dataProvider.flush();
         dataProvider.refresh();
@@ -272,38 +306,49 @@ public class GetRichResources implements JsonCallback, JsonCallbackTable<RichRes
 
 	public void filterTable(String filter) {
 		
-		// always clear selected items
-		selectionModel.clear();
-		
 		// store list only for first time
 		if (fullBackup.isEmpty() || fullBackup == null) {
-			for (RichResource res : getList()){
-				fullBackup.add(res);
-			}	
+			fullBackup.addAll(list);
 		}
-		if (filter.equalsIgnoreCase("")) {
-			list.clear();
+
+        // always clear selected items
+        selectionModel.clear();
+        list.clear();
+
+        if (filter.equalsIgnoreCase("")) {
             list.addAll(fullBackup);
 		} else {
-            list.clear();
 			for (RichResource res : fullBackup){
 				// store facility by filter
 				if (res.getName().toLowerCase().startsWith(filter.toLowerCase())) {
-					addToTable(res);
+					list.add(res);
 				}
+                for (ResourceTag r : res.getResourceTags()) {
+                    // remove " (tag)" from tag name
+                    if (r.getName().startsWith(filter.substring(0, (filter.length() > 6) ? filter.length()-6 : filter.length()).trim())) {
+                        list.add(res);
+                        break;
+                    }
+                }
 			}
 		}
+
         dataProvider.flush();
         dataProvider.refresh();
+        loaderImage.loadingFinished();
 		
 	}
 
-	public MultiWordSuggestOracle getOracle() {
+	public UnaccentMultiWordSuggestOracle getOracle() {
 		return this.oracle;
 	}
 
-	public void setOracle(MultiWordSuggestOracle oracle) {
+	public void setOracle(UnaccentMultiWordSuggestOracle oracle) {
 		this.oracle = oracle;
 	}
+
+    public void setEvents(JsonCallbackEvents events) {
+        this.events = events;
+    }
 
 }

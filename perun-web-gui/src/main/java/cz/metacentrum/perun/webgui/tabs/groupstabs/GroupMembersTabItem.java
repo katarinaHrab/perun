@@ -23,11 +23,15 @@ import cz.metacentrum.perun.webgui.json.membersManager.FindCompleteRichMembers;
 import cz.metacentrum.perun.webgui.json.membersManager.GetCompleteRichMembers;
 import cz.metacentrum.perun.webgui.model.Group;
 import cz.metacentrum.perun.webgui.model.RichMember;
-import cz.metacentrum.perun.webgui.tabs.*;
+import cz.metacentrum.perun.webgui.tabs.GroupsTabs;
+import cz.metacentrum.perun.webgui.tabs.TabItem;
+import cz.metacentrum.perun.webgui.tabs.TabItemWithUrl;
+import cz.metacentrum.perun.webgui.tabs.UrlMapper;
 import cz.metacentrum.perun.webgui.tabs.memberstabs.AddMemberToGroupTabItem;
 import cz.metacentrum.perun.webgui.tabs.memberstabs.MemberDetailTabItem;
 import cz.metacentrum.perun.webgui.tabs.vostabs.VoMembersTabItem;
 import cz.metacentrum.perun.webgui.widgets.CustomButton;
+import cz.metacentrum.perun.webgui.widgets.ExtendedSuggestBox;
 import cz.metacentrum.perun.webgui.widgets.TabMenu;
 
 import java.util.ArrayList;
@@ -128,6 +132,8 @@ public class GroupMembersTabItem implements TabItem, TabItemWithUrl{
 		// CALLBACKS
 		final GetCompleteRichMembers members = new GetCompleteRichMembers(PerunEntity.GROUP, groupId, null, disableCheckboxEvent);
 		final FindCompleteRichMembers findMembers = new FindCompleteRichMembers(PerunEntity.GROUP, groupId, "", null, disableCheckboxEvent);
+        members.setIndirectCheckable(false);
+        findMembers.setIndirectCheckable(false);
 
 		// refreshMembers
 		final JsonCallbackEvents refreshMembersEvent = JsonCallbackEvents.refreshTableEvents(members);
@@ -180,7 +186,7 @@ public class GroupMembersTabItem implements TabItem, TabItemWithUrl{
                                 }else{
                                     request = new RemoveMember(events);
                                 }
-                                request.removeMemberFromGroup(groupId, itemsToRemove.get(i).getId());
+                                request.removeMemberFromGroup(group, itemsToRemove.get(i));
                             }
                         }
                     });
@@ -251,11 +257,11 @@ public class GroupMembersTabItem implements TabItem, TabItemWithUrl{
 		}, "Search", "Search for Group members by name, login, email");
 		searchBox.setText(searchString);
         */
-        final SuggestBox box = new SuggestBox(members.getOracle());
-        box.addValueChangeHandler(new ValueChangeHandler<String>() {
+        final ExtendedSuggestBox box = new ExtendedSuggestBox(members.getOracle());
+        box.getSuggestBox().addValueChangeHandler(new ValueChangeHandler<String>() {
             @Override
             public void onValueChange(ValueChangeEvent<String> stringValueChangeEvent) {
-                searchString = box.getText();
+                searchString = box.getSuggestBox().getText().trim();
             }
         });
 
@@ -312,9 +318,9 @@ public class GroupMembersTabItem implements TabItem, TabItemWithUrl{
         removeButton.setEnabled(false);
 
 		// get the table
-		CellTable<RichMember> table = members.getTable(new FieldUpdater<RichMember, String>() {
+		CellTable<RichMember> table = members.getTable(new FieldUpdater<RichMember, RichMember>() {
 			// when user click on a row -> open new tab
-			public void update(int index, RichMember object, String value) {
+			public void update(int index, RichMember object, RichMember value) {
 				// TODO better auth
 				session.getTabManager().addTab(new MemberDetailTabItem(object.getId(), groupId));
 			}
@@ -343,9 +349,9 @@ public class GroupMembersTabItem implements TabItem, TabItemWithUrl{
 
 		ScrollPanel tableWrapper = new ScrollPanel();
 
-		CellTable<RichMember> table = findMembers.getEmptyTable(new FieldUpdater<RichMember, String>() {
+		CellTable<RichMember> table = findMembers.getEmptyTable(new FieldUpdater<RichMember, RichMember>() {
 			// when user click on a row -> open new tab
-			public void update(int index, RichMember object, String value) {
+			public void update(int index, RichMember object, RichMember value) {
 				// TODO better auth
 				session.getTabManager().addTab(new MemberDetailTabItem(object.getId(), groupId));
 			}
@@ -367,8 +373,7 @@ public class GroupMembersTabItem implements TabItem, TabItemWithUrl{
 		
 	}
 	
-	private void setPageWidget(Widget w)
-	{
+	private void setPageWidget(Widget w) {
 		this.pageWidget.setWidget(w);
 
 	}
@@ -418,8 +423,7 @@ public class GroupMembersTabItem implements TabItem, TabItemWithUrl{
 		return false;
 	}
 
-	public void open()
-	{
+	public void open() {
 		session.getUiElements().getMenu().openMenu(MainMenu.GROUP_ADMIN);
         session.getUiElements().getBreadcrumbs().setLocation(group, "Members", getUrlWithParameters());
 		if(group != null){
@@ -444,14 +448,13 @@ public class GroupMembersTabItem implements TabItem, TabItemWithUrl{
 		return URL;
 	}
 	
-	public String getUrlWithParameters()
-	{
+	public String getUrlWithParameters() {
 		return GroupsTabs.URL + UrlMapper.TAB_NAME_SEPARATOR + getUrl() + "?id=" + groupId;
 	}
 	
-	static public GroupMembersTabItem load(Map<String, String> parameters)
-	{
+	static public GroupMembersTabItem load(Map<String, String> parameters) {
 		int gid = Integer.parseInt(parameters.get("id"));
 		return new GroupMembersTabItem(gid);
 	}
+
 }

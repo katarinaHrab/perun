@@ -18,8 +18,12 @@ import cz.metacentrum.perun.webgui.json.JsonUtils;
 import cz.metacentrum.perun.webgui.json.facilitiesManager.DeleteFacility;
 import cz.metacentrum.perun.webgui.json.facilitiesManager.GetFacilities;
 import cz.metacentrum.perun.webgui.model.Facility;
-import cz.metacentrum.perun.webgui.tabs.*;
+import cz.metacentrum.perun.webgui.tabs.FacilitiesTabs;
+import cz.metacentrum.perun.webgui.tabs.TabItem;
+import cz.metacentrum.perun.webgui.tabs.TabItemWithUrl;
+import cz.metacentrum.perun.webgui.tabs.UrlMapper;
 import cz.metacentrum.perun.webgui.widgets.CustomButton;
+import cz.metacentrum.perun.webgui.widgets.ExtendedSuggestBox;
 import cz.metacentrum.perun.webgui.widgets.TabMenu;
 
 import java.util.ArrayList;
@@ -69,7 +73,8 @@ public class FacilitiesSelectTabItem implements TabItem, TabItemWithUrl{
 		
 		// get RICH facilities request
 		final GetFacilities facilities = new GetFacilities(true);
-		
+        final JsonCallbackEvents events = JsonCallbackEvents.refreshTableEvents(facilities);
+
 		// retrieve data (table)
 		final CellTable<Facility> table = facilities.getTable(new FieldUpdater<Facility, String>() {
 			public void update(int index, Facility object, String value) {
@@ -80,11 +85,9 @@ public class FacilitiesSelectTabItem implements TabItem, TabItemWithUrl{
         // add new facility button
         tabMenu.addWidget(TabMenu.getPredefinedButton(ButtonType.CREATE, ButtonTranslation.INSTANCE.createFacility(), new ClickHandler() {
             public void onClick(ClickEvent event) {
-                session.getTabManager().addTab(new CreateFacilityTabItem());
+                session.getTabManager().addTab(new CreateFacilityTabItem(facilities.getList(),events));
             }
         }));
-
-		final JsonCallbackEvents events = JsonCallbackEvents.refreshTableEvents(facilities);
 
 		// add delete facilities button
 		final CustomButton deleteButton = TabMenu.getPredefinedButton(ButtonType.DELETE, ButtonTranslation.INSTANCE.deleteFacilities());
@@ -116,7 +119,7 @@ public class FacilitiesSelectTabItem implements TabItem, TabItemWithUrl{
 		});
 		
 		// filter box
-		tabMenu.addFilterWidget(new SuggestBox(facilities.getOracle()), new PerunSearchEvent() {
+		tabMenu.addFilterWidget(new ExtendedSuggestBox(facilities.getOracle()), new PerunSearchEvent() {
             public void searchFor(String text) {
                 facilities.filterTable(text);
             }

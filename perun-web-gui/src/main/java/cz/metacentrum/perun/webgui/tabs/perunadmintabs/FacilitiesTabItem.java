@@ -18,10 +18,14 @@ import cz.metacentrum.perun.webgui.json.JsonUtils;
 import cz.metacentrum.perun.webgui.json.facilitiesManager.DeleteFacility;
 import cz.metacentrum.perun.webgui.json.facilitiesManager.GetFacilities;
 import cz.metacentrum.perun.webgui.model.Facility;
-import cz.metacentrum.perun.webgui.tabs.*;
+import cz.metacentrum.perun.webgui.tabs.PerunAdminTabs;
+import cz.metacentrum.perun.webgui.tabs.TabItem;
+import cz.metacentrum.perun.webgui.tabs.TabItemWithUrl;
+import cz.metacentrum.perun.webgui.tabs.UrlMapper;
 import cz.metacentrum.perun.webgui.tabs.facilitiestabs.CreateFacilityTabItem;
 import cz.metacentrum.perun.webgui.tabs.facilitiestabs.FacilityDetailTabItem;
 import cz.metacentrum.perun.webgui.widgets.CustomButton;
+import cz.metacentrum.perun.webgui.widgets.ExtendedSuggestBox;
 import cz.metacentrum.perun.webgui.widgets.TabMenu;
 
 import java.util.ArrayList;
@@ -82,7 +86,7 @@ public class FacilitiesTabItem implements TabItem, TabItemWithUrl{
 		// add new facility button
 		tabMenu.addWidget(TabMenu.getPredefinedButton(ButtonType.CREATE, ButtonTranslation.INSTANCE.createFacility(), new ClickHandler() {
             public void onClick(ClickEvent event) {
-                session.getTabManager().addTabToCurrentTab(new CreateFacilityTabItem());
+                session.getTabManager().addTab(new CreateFacilityTabItem());
             }
         }));
 
@@ -115,7 +119,7 @@ public class FacilitiesTabItem implements TabItem, TabItemWithUrl{
 		});
 		
 		// filter box
-		tabMenu.addFilterWidget(new SuggestBox(facilities.getOracle()), new PerunSearchEvent() {
+		tabMenu.addFilterWidget(new ExtendedSuggestBox(facilities.getOracle()), new PerunSearchEvent() {
             public void searchFor(String text) {
                 facilities.filterTable(text);
             }
@@ -174,8 +178,6 @@ public class FacilitiesTabItem implements TabItem, TabItemWithUrl{
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		
-
 		return true;
 	}
 
@@ -205,13 +207,11 @@ public class FacilitiesTabItem implements TabItem, TabItemWithUrl{
 		return URL;
 	}
 	
-	public String getUrlWithParameters()
-	{
+	public String getUrlWithParameters() {
 		return PerunAdminTabs.URL + UrlMapper.TAB_NAME_SEPARATOR + getUrl();
 	}
 	
-	static public FacilitiesTabItem load(Map<String, String> parameters)
-	{
+	static public FacilitiesTabItem load(Map<String, String> parameters) {
 		return new FacilitiesTabItem();
 	}
 	

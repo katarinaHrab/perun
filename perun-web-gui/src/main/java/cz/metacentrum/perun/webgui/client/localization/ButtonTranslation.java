@@ -295,14 +295,32 @@ public interface ButtonTranslation extends Messages {
     @DefaultMessage("Remove selected VO managers")
     String removeManagerFromVo();
 
-   @DefaultMessage("Add new group manager")
+    @DefaultMessage("Add group as new VO manager")
+    String addManagerGroupToVo();
+
+    @DefaultMessage("Add selected groups as VO`s managers")
+    String addSelectedManagersGroupToVo();
+
+    @DefaultMessage("Remove selected groups from VO managers")
+    String removeManagerGroupFromVo();
+
+    @DefaultMessage("Add new group manager")
     String addManagerToGroup();
 
-    @DefaultMessage("Add selected users as VO`s managers")
+    @DefaultMessage("Add selected users as groups managers")
     String addSelectedManagersToGroup();
 
     @DefaultMessage("Remove selected group managers")
     String removeManagerFromGroup();
+
+    @DefaultMessage("Add group as new group manager")
+    String addManagerGroupToGroup();
+
+    @DefaultMessage("Add selected groups as groups managers")
+    String addSelectedManagersGroupToGroup();
+
+    @DefaultMessage("Remove selected groups from group managers")
+    String removeManagerGroupFromGroup();
 
     @DefaultMessage("Add new facility manager")
     String addManagerToFacility();
@@ -312,6 +330,15 @@ public interface ButtonTranslation extends Messages {
 
     @DefaultMessage("Remove selected facility managers")
     String removeManagerFromFacility();
+
+    @DefaultMessage("Add new group as facility manager")
+    String addManagerGroupToFacility();
+
+    @DefaultMessage("Add selected groups as facility managers")
+    String addSelectedManagersGroupToFacility();
+
+    @DefaultMessage("Remove selected groups from facility managers")
+    String removeManagerGroupFromFacility();
 
     /* USERS */
 
@@ -329,7 +356,7 @@ public interface ButtonTranslation extends Messages {
     @DefaultMessage("Delete selected resources")
     String deleteResource();
 
-    @DefaultMessage("Filter resources by name")
+    @DefaultMessage("Filter resources by name or tag")
     String filterResources();
 
     @DefaultMessage("Edit resource details")
@@ -347,11 +374,17 @@ public interface ButtonTranslation extends Messages {
     @DefaultMessage("Assign this group to new resources")
     String assignGroupToResources();
 
+    @DefaultMessage("Assign new tags to this resource")
+    String assignTagsToResource();
+
     @DefaultMessage("Remove selected groups from this resource")
     String removeGroupFromResource();
 
-    @DefaultMessage("Remove selected groups from this resource")
+    @DefaultMessage("Remove group from selected resources")
     String removeGroupFromSelectedResources();
+
+    @DefaultMessage("Remove selected tags from this resource")
+    String removeSelectedTagsFromResource();
 
     @DefaultMessage("Assign new service to this resource")
     String assignServiceToResource();
@@ -365,11 +398,26 @@ public interface ButtonTranslation extends Messages {
     @DefaultMessage("Assign selected services to resource")
     String assignSelectedServicesToResource();
 
+    @DefaultMessage("Assign selected tags to resource")
+    String assignSelectedTagsToResource();
+
     @DefaultMessage("Fill values for all empty displayed attributes based on current configuration. Changes are not saved until you click on \"Save\" button.")
     String fillResourceAttributes();
 
     @DefaultMessage("Finish assigning of selected group")
     String finishGroupAssigning();
+
+    /* RESOURCES TAGS */
+
+    @DefaultMessage("Save changes in resource`s tags names")
+    String updateResourceTag();
+
+    @DefaultMessage("Create new resource`s tag in VO")
+    String createResourceTag();
+
+    @DefaultMessage("Delete selected resource`s tags from VO")
+    String deleteResourceTag();
+
 
     /* GROUPS */
 
@@ -579,6 +627,9 @@ public interface ButtonTranslation extends Messages {
     @DefaultMessage("Remove selected hosts from facility")
     String removeHosts();
 
+    @DefaultMessage("Filter hosts by name")
+    String filterHosts();
+
     /* PERUN ADMIN */
 
     @DefaultMessage("Refresh list of audit messages")
@@ -613,6 +664,9 @@ public interface ButtonTranslation extends Messages {
     @DefaultMessage("Remove selected dependent services")
     String deleteSelectedExecServices();
 
+    @DefaultMessage("Filter services by name")
+    String filterServices();
+
     /* SERVICE PACKAGES */
 
     @DefaultMessage("Create new service package in Perun")
@@ -623,6 +677,11 @@ public interface ButtonTranslation extends Messages {
 
     @DefaultMessage("Save changes in services packages")
     String saveChangesInServicesPackages();
+
+    /* TAGS */
+
+    @DefaultMessage("Filter resources tags by name")
+    String filterTags();
 
     /* ======= TITLES FOR DISABLED BUTTONS =============== */
 

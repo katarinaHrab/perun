@@ -11,10 +11,7 @@ import cz.metacentrum.perun.webgui.client.PerunWebSession;
 import cz.metacentrum.perun.webgui.client.UiElements;
 import cz.metacentrum.perun.webgui.client.localization.ButtonTranslation;
 import cz.metacentrum.perun.webgui.client.mainmenu.MainMenu;
-import cz.metacentrum.perun.webgui.client.resources.ButtonType;
-import cz.metacentrum.perun.webgui.client.resources.PerunEntity;
-import cz.metacentrum.perun.webgui.client.resources.SmallIcons;
-import cz.metacentrum.perun.webgui.client.resources.Utils;
+import cz.metacentrum.perun.webgui.client.resources.*;
 import cz.metacentrum.perun.webgui.json.GetEntityById;
 import cz.metacentrum.perun.webgui.json.JsonCallbackEvents;
 import cz.metacentrum.perun.webgui.json.JsonUtils;
@@ -22,9 +19,13 @@ import cz.metacentrum.perun.webgui.json.resourcesManager.GetAssignedGroups;
 import cz.metacentrum.perun.webgui.json.resourcesManager.RemoveGroupFromResource;
 import cz.metacentrum.perun.webgui.model.Group;
 import cz.metacentrum.perun.webgui.model.Resource;
-import cz.metacentrum.perun.webgui.tabs.*;
+import cz.metacentrum.perun.webgui.tabs.ResourcesTabs;
+import cz.metacentrum.perun.webgui.tabs.TabItem;
+import cz.metacentrum.perun.webgui.tabs.TabItemWithUrl;
+import cz.metacentrum.perun.webgui.tabs.UrlMapper;
 import cz.metacentrum.perun.webgui.tabs.groupstabs.GroupDetailTabItem;
 import cz.metacentrum.perun.webgui.widgets.CustomButton;
+import cz.metacentrum.perun.webgui.widgets.ExtendedSuggestBox;
 import cz.metacentrum.perun.webgui.widgets.TabMenu;
 
 import java.util.ArrayList;
@@ -130,6 +131,13 @@ public class ResourceAssignedGroupsTabItem implements TabItem, TabItemWithUrl{
 
 		menu.addWidget(assignGroupButton);
 		menu.addWidget(removeGroupButton);
+
+        menu.addFilterWidget(new ExtendedSuggestBox(resourceGroups.getOracle()), new PerunSearchEvent() {
+            @Override
+            public void searchFor(String text) {
+                resourceGroups.filterTable(text);
+            }
+        }, ButtonTranslation.INSTANCE.filterGroup());
 
         // display menu to vo admin only
         if (session.isVoAdmin(resource.getVoId())) {

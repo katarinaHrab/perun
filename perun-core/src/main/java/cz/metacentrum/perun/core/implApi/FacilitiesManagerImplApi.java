@@ -35,7 +35,7 @@ import java.sql.SQLException;
  *
  * @author Michal Prochazka
  * @author Slavek Licehammer
- * @version $Id$
+ * @version $Id: 4ef758d03c3e54841a886d276cd50f0e92c42167 $
  */
 public interface FacilitiesManagerImplApi {
 
@@ -231,6 +231,16 @@ public interface FacilitiesManagerImplApi {
   void deleteFacility(PerunSession perunSession, Facility facility) throws InternalErrorException, FacilityAlreadyRemovedException;
 
   /**
+   * Updates facility in DB.
+   *
+   * @param perunSession
+   * @param facility
+   *
+   * @throws InternalErrorException
+   */
+  Facility updateFacility(PerunSession perunSession, Facility facility) throws InternalErrorException;
+
+    /**
    * Deletes all facility owners.
    * 
    * @param perunSession
@@ -368,7 +378,7 @@ public interface FacilitiesManagerImplApi {
    * Adds user administrator to the Facility.
    * 
    * @param sess
-   * @param vo
+   * @param facility
    * @param user
    * @throws InternalErrorException
    * @throws AlreadyAdminException
@@ -380,7 +390,7 @@ public interface FacilitiesManagerImplApi {
    * Adds group administrator to the Facility.
    * 
    * @param sess
-   * @param vo
+   * @param facility
    * @param group
    * @throws InternalErrorException
    * @throws AlreadyAdminException
@@ -391,7 +401,7 @@ public interface FacilitiesManagerImplApi {
    * Removes a user administrator from the Facility.
    * 
    * @param sess
-   * @param vo
+   * @param facility
    * @param user
    * @throws InternalErrorException
    * @throws UserNotAdminException
@@ -402,7 +412,7 @@ public interface FacilitiesManagerImplApi {
    * Removes a group administrator from the Facility.
    * 
    * @param sess
-   * @param vo
+   * @param facility
    * @param group
    * @throws InternalErrorException
    * @throws GroupNotAdminException

@@ -6,7 +6,6 @@ import com.google.gwt.core.client.JsArray;
 import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
-import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.view.client.DefaultSelectionEventManager;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
@@ -19,6 +18,7 @@ import cz.metacentrum.perun.webgui.model.Owner;
 import cz.metacentrum.perun.webgui.model.PerunError;
 import cz.metacentrum.perun.webgui.widgets.AjaxLoaderImage;
 import cz.metacentrum.perun.webgui.widgets.PerunTable;
+import cz.metacentrum.perun.webgui.widgets.UnaccentMultiWordSuggestOracle;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -54,7 +54,7 @@ public class GetFacilities implements JsonCallback, JsonCallbackTable<Facility>,
     private boolean checkable = true;
     // oracle support
     private ArrayList<Facility> fullBackup = new ArrayList<Facility>();
-    private MultiWordSuggestOracle oracle = new MultiWordSuggestOracle();
+    private UnaccentMultiWordSuggestOracle oracle = new UnaccentMultiWordSuggestOracle();
     // get Rich or Normal facilities (default normal)
     private boolean provideRich = false;
 
@@ -320,25 +320,24 @@ public class GetFacilities implements JsonCallback, JsonCallbackTable<Facility>,
         return this.list;
     }
 
-    public MultiWordSuggestOracle getOracle(){
+    public UnaccentMultiWordSuggestOracle getOracle(){
         return this.oracle;
     }
 
     public void filterTable(String text){
 
-        // always clear selected items
-        selectionModel.clear();
-
         // store list only for first time
         if (fullBackup.isEmpty() || fullBackup == null) {
-            for (Facility fac : getList()){
-                fullBackup.add(fac);
-            }
+            fullBackup.addAll(list);
         }
+
+        // always clear selected items
+        selectionModel.clear();
+        list.clear();
+
         if (text.equalsIgnoreCase("")) {
-            setList(fullBackup);
+            list.addAll(fullBackup);
         } else {
-            getList().clear();
             for (Facility fac : fullBackup){
                 // store facility by filter
                 if (fac.getName().toLowerCase().startsWith(text.toLowerCase())) {
@@ -354,16 +353,13 @@ public class GetFacilities implements JsonCallback, JsonCallbackTable<Facility>,
                     }
                 }
             }
-            if (getList().isEmpty()) {
-                loaderImage.loadingFinished();
-            }
-            dataProvider.flush();
-            dataProvider.refresh();
         }
-
+        loaderImage.loadingFinished();
+        dataProvider.flush();
+        dataProvider.refresh();
     }
 
-    public void setOracle(MultiWordSuggestOracle oracle) {
+    public void setOracle(UnaccentMultiWordSuggestOracle oracle) {
         this.oracle = oracle;
     }
 

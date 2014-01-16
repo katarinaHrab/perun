@@ -37,7 +37,7 @@ import cz.metacentrum.perun.core.api.exceptions.ServicesPackageNotExistsExceptio
  * ServicesManager's functionality is going to be encapsulated in the Controller's
  * GeneralServiceManager.
  * 
- * @version $Id$
+ * @version $Id: 1804b481ee5b3a22a21a4a69d1075d529893b927 $
  */
 public interface ServicesManagerBl {
 
@@ -285,7 +285,7 @@ public interface ServicesManagerBl {
 
   /**
    *  Batch version of addRequiredAttribute
-   *  @see cz.metacentrum.perun.core.api.ServicesManager#addRequiredAttribute(PerunSession,Service,Attribute)
+   *  @see cz.metacentrum.perun.core.api.ServicesManager#addRequiredAttribute(PerunSession,Service,AttributeDefinition)
    */
   void addRequiredAttributes(PerunSession perunSession, Service service, List<? extends AttributeDefinition> attributes) throws InternalErrorException, AttributeAlreadyAssignedException;
 
@@ -304,7 +304,7 @@ public interface ServicesManagerBl {
 
   /**
    *  Batch version of removeRequiredAttribute
-   *  @see cz.metacentrum.perun.core.api.ServicesManager#removeRequiredAttribute(PerunSession,Service,Attribute)
+   *  @see cz.metacentrum.perun.core.api.ServicesManager#removeRequiredAttribute(PerunSession,Service,AttributeDefinition)
    */
   void removeRequiredAttributes(PerunSession perunSession, Service service, List<? extends AttributeDefinition> attributes) throws InternalErrorException, AttributeNotAssignedException;
 
@@ -333,6 +333,19 @@ public interface ServicesManagerBl {
   Destination addDestination(PerunSession perunSession, Service service, Facility facility, Destination destination) throws InternalErrorException, DestinationAlreadyAssignedException;
 
   /**
+   * Adds an destination for the facility and all services. Destination id doesn't need to be filled. If destination doesn't exist it will be created.
+   * 
+   * @param perunSession
+   * @param services
+   * @param facility
+   * @param destination (id of this destination doesn't need to be filled.)
+   * @return destination with it's id set
+   * @throws InternalErrorException
+   * @throws DestinationAlreadyAssignedException 
+   */
+  Destination addDestination(PerunSession perunSession, List<Service> services, Facility facility, Destination destination) throws InternalErrorException, DestinationAlreadyAssignedException;
+    
+  /**
    * Adds destination for all services defined on the facility.
    * 
    * @param perunSession
@@ -350,12 +363,52 @@ public interface ServicesManagerBl {
    * @param perunSession
    * @param service
    * @param facility
-   * @param destination
    * @return list of added destinations
    * @throws InternalErrorException
    * @throws DestinationAlreadyAssignedException
    */
   List<Destination> addDestinationsDefinedByHostsOnCluster(PerunSession perunSession, Service service, Facility facility) throws InternalErrorException, DestinationAlreadyAssignedException;
+  
+  /**
+   * Defines service destination for all hosts using theirs hostnames.
+   * 
+   * @param perunSession
+   * @param service
+   * @param facility
+   * @return list of added destinations
+   * @throws InternalErrorException
+   * @throws DestinationAlreadyAssignedException 
+   */
+  List<Destination> addDestinationsDefinedByHostsOnFacility(PerunSession perunSession, Service service, Facility facility) throws InternalErrorException, DestinationAlreadyAssignedException;
+  
+  /**
+   * Defines services destination for all hosts using their hostnames.
+   * Do it for all services in List.
+   * 
+   * If some destination for service and facility already exist, do not create it but still return back in the list.
+   * 
+   * @param perunSession
+   * @param service
+   * @param facility
+   * @return list of added destiniations (even if they alredy was adedded before)
+   * @throws InternalErrorException 
+   */
+  List<Destination> addDestinationsDefinedByHostsOnFacility(PerunSession perunSession, List<Service> services, Facility facility) throws InternalErrorException;
+  
+  /**
+   * Defines services destiniation for all hosts using their hostnames.
+   * Use all assigned services to resources for the facility.
+   * 
+   * If some destination for service and facility already exist, do not create it but still return back in the list.
+   * 
+   * @param perunSession
+   * @param service
+   * @param facility
+   * @return list of added destiniations (even if they alredy was adedded before)
+   * @throws InternalErrorException 
+   */
+  List<Destination> addDestinationsDefinedByHostsOnFacility(PerunSession perunSession, Facility facility) throws InternalErrorException;
+  
   
   /**
    * Removes an destination from the facility and service.

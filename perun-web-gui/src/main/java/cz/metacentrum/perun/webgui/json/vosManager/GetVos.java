@@ -4,7 +4,6 @@ import com.google.gwt.cell.client.FieldUpdater;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
-import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.view.client.DefaultSelectionEventManager;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
@@ -19,6 +18,7 @@ import cz.metacentrum.perun.webgui.model.PerunError;
 import cz.metacentrum.perun.webgui.model.VirtualOrganization;
 import cz.metacentrum.perun.webgui.widgets.AjaxLoaderImage;
 import cz.metacentrum.perun.webgui.widgets.PerunTable;
+import cz.metacentrum.perun.webgui.widgets.UnaccentMultiWordSuggestOracle;
 
 import java.util.ArrayList;
 
@@ -52,7 +52,7 @@ public class GetVos implements JsonCallback, JsonCallbackTable<VirtualOrganizati
 	private AjaxLoaderImage loaderImage = new AjaxLoaderImage();
     // oracle
     private ArrayList<VirtualOrganization> fullBackup = new ArrayList<VirtualOrganization>();
-    private MultiWordSuggestOracle oracle = new MultiWordSuggestOracle();
+    private UnaccentMultiWordSuggestOracle oracle = new UnaccentMultiWordSuggestOracle();
     private boolean forceAll = false;
     private boolean checkable = true;
 
@@ -265,41 +265,40 @@ public class GetVos implements JsonCallback, JsonCallbackTable<VirtualOrganizati
 
     @Override
     public void filterTable(String filter) {
-        // always clear selected items
-        selectionModel.clear();
 
         // store list only for first time
         if (fullBackup.isEmpty() || fullBackup == null) {
-            for (VirtualOrganization vo : getList()){
-                fullBackup.add(vo);
-            }
+            fullBackup.addAll(list);
         }
+
+        // always clear selected items
+        selectionModel.clear();
+        list.clear();
+
         if (filter.equalsIgnoreCase("")) {
-            setList(fullBackup);
+            list.addAll(fullBackup);
         } else {
-            getList().clear();
             for (VirtualOrganization vo : fullBackup){
                 // store facility by filter
                 if (vo.getName().toLowerCase().startsWith(filter.toLowerCase()) || vo.getShortName().toLowerCase().startsWith(filter.toLowerCase())) {
-                    addToTable(vo);
+                    list.add(vo);
                 }
             }
-            if (getList().isEmpty()) {
-                loaderImage.loadingFinished();
-            }
-            dataProvider.flush();
-            dataProvider.refresh();
         }
+
+        dataProvider.flush();
+        dataProvider.refresh();
+        loaderImage.loadingFinished();
 
     }
 
     @Override
-    public MultiWordSuggestOracle getOracle() {
+    public UnaccentMultiWordSuggestOracle getOracle() {
         return this.oracle;
     }
 
     @Override
-    public void setOracle(MultiWordSuggestOracle oracle) {
+    public void setOracle(UnaccentMultiWordSuggestOracle oracle) {
         this.oracle = oracle;
     }
 }

@@ -8,8 +8,10 @@ import com.google.gwt.resources.client.ImageResource;
 import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.client.ui.*;
 import cz.metacentrum.perun.webgui.client.PerunWebSession;
+import cz.metacentrum.perun.webgui.client.localization.ButtonTranslation;
 import cz.metacentrum.perun.webgui.client.mainmenu.MainMenu;
 import cz.metacentrum.perun.webgui.client.resources.PerunEntity;
+import cz.metacentrum.perun.webgui.client.resources.PerunSearchEvent;
 import cz.metacentrum.perun.webgui.client.resources.SmallIcons;
 import cz.metacentrum.perun.webgui.client.resources.TableSorter;
 import cz.metacentrum.perun.webgui.json.GetEntityById;
@@ -20,7 +22,11 @@ import cz.metacentrum.perun.webgui.json.vosManager.GetVos;
 import cz.metacentrum.perun.webgui.model.Group;
 import cz.metacentrum.perun.webgui.model.PerunError;
 import cz.metacentrum.perun.webgui.model.VirtualOrganization;
-import cz.metacentrum.perun.webgui.tabs.*;
+import cz.metacentrum.perun.webgui.tabs.GroupsTabs;
+import cz.metacentrum.perun.webgui.tabs.TabItem;
+import cz.metacentrum.perun.webgui.tabs.TabItemWithUrl;
+import cz.metacentrum.perun.webgui.tabs.UrlMapper;
+import cz.metacentrum.perun.webgui.widgets.ExtendedSuggestBox;
 import cz.metacentrum.perun.webgui.widgets.ListBoxWithObjects;
 import cz.metacentrum.perun.webgui.widgets.TabMenu;
 
@@ -104,8 +110,14 @@ public class GroupsTabItem implements TabItem, TabItemWithUrl {
         final ListBoxWithObjects<VirtualOrganization> vos = new ListBoxWithObjects<VirtualOrganization>();
         menu.addWidget(new HTML("<strong>Selected VO: </strong>"));
         menu.addWidget(vos);
+        menu.addFilterWidget(new ExtendedSuggestBox(groups.getOracle()), new PerunSearchEvent() {
+            @Override
+            public void searchFor(String text) {
+                groups.filterTable(text);
+            }
+        }, ButtonTranslation.INSTANCE.filterGroup());
         menu.addWidget(new Image(SmallIcons.INSTANCE.helpIcon()));
-        menu.addWidget(new HTML("<strong>Please select VO to see its groups that you can manage.</strong>"));
+        menu.addWidget(new HTML("<strong>Select VO to see groups that you can manage.</strong>"));
 
         final TabItem tab = this;
 
@@ -139,7 +151,7 @@ public class GroupsTabItem implements TabItem, TabItemWithUrl {
                 ArrayList<VirtualOrganization> returnedVos = JsonUtils.jsoAsList(jso);
                 returnedVos = new TableSorter<VirtualOrganization>().sortByName(returnedVos);
                 if (returnedVos == null || returnedVos.isEmpty()){
-                    vos.addItem("No VO returned");
+                    vos.addItem("No VO available");
                     return;
                 }
                 // put and set selected

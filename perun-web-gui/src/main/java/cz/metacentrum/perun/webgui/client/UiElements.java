@@ -28,7 +28,10 @@ import cz.metacentrum.perun.webgui.json.JsonUtils;
 import cz.metacentrum.perun.webgui.model.*;
 import cz.metacentrum.perun.webgui.tabs.TabItem;
 import cz.metacentrum.perun.webgui.tabs.userstabs.SelfDetailTabItem;
-import cz.metacentrum.perun.webgui.widgets.*;
+import cz.metacentrum.perun.webgui.widgets.AjaxLoaderImage;
+import cz.metacentrum.perun.webgui.widgets.BreadcrumbsWidget;
+import cz.metacentrum.perun.webgui.widgets.Confirm;
+import cz.metacentrum.perun.webgui.widgets.LogoutButton;
 
 import java.util.*;
 
@@ -451,6 +454,9 @@ public class UiElements {
                 } else if (go.getObjectType().equalsIgnoreCase("Author")) {
                     Author aut = go.cast();
                     items = items.concat("<li>"+aut.getDisplayName()+"</li>");
+                } else if (go.getObjectType().equalsIgnoreCase("ResourceTag")) {
+                    ResourceTag tag = go.cast();
+                    items = items.concat("<li>"+tag.getName()+"</li>");
                 } else {
                     items = items.concat("<li>"+go.getName()+"</li>");
                 }
@@ -825,7 +831,7 @@ public class UiElements {
 		}
 		
 		// image
-		Image img = new Image("img/logo11.png");
+		Image img = new Image(PerunWebConstants.INSTANCE.logoUrl());
         layout.add(img);
         layout.setWidgetPosition(img, 10, 5);
 

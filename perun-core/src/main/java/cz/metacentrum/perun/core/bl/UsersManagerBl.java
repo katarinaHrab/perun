@@ -2,19 +2,7 @@ package cz.metacentrum.perun.core.bl;
 
 import java.util.List;
 
-import cz.metacentrum.perun.core.api.Attribute;
-import cz.metacentrum.perun.core.api.AttributeDefinition;
-import cz.metacentrum.perun.core.api.ExtSource;
-import cz.metacentrum.perun.core.api.Facility;
-import cz.metacentrum.perun.core.api.Group;
-import cz.metacentrum.perun.core.api.Member;
-import cz.metacentrum.perun.core.api.PerunBean;
-import cz.metacentrum.perun.core.api.PerunSession;
-import cz.metacentrum.perun.core.api.Resource;
-import cz.metacentrum.perun.core.api.RichUser;
-import cz.metacentrum.perun.core.api.User;
-import cz.metacentrum.perun.core.api.UserExtSource;
-import cz.metacentrum.perun.core.api.Vo;
+import cz.metacentrum.perun.core.api.*;
 import cz.metacentrum.perun.core.api.exceptions.*;
 
 /**
@@ -23,7 +11,7 @@ import cz.metacentrum.perun.core.api.exceptions.*;
  * @author Michal Prochazka
  * @author Slavek Licehammer
  * @author Zora Sebestianova
- * @version $Id$
+ * @version $Id: d3cfbca70bdb8109f77cc96ef6f36a1576aebfe1 $
  */
 public interface UsersManagerBl {
 
@@ -434,7 +422,18 @@ public interface UsersManagerBl {
    * @throws InternalErrorException
    */
   List<Resource> getAssignedResources(PerunSession sess, User user) throws InternalErrorException;
-  
+
+   /**
+   * Get all rich resources where the user is assigned.
+   *
+   * @param sess
+   * @param user
+   * @return list of rich resources which have the user acess on
+   *
+   * @throws InternalErrorException
+   */
+  List<RichResource> getAssignedRichResources(PerunSession sess, User user) throws InternalErrorException;
+
   /**
    * Returns all users who have set the attribute with the value. Searching only def and opt attributes.
    * 
@@ -688,7 +687,6 @@ public interface UsersManagerBl {
    * @param sess
    * @param userLogin string representation of the userLogin
    * @param loginNamespace
-   * @param password
    * @throws InternalErrorException
    * @throws PasswordCreationFailedException
    */
@@ -701,7 +699,6 @@ public interface UsersManagerBl {
    * @param sess
    * @param user
    * @param loginNamespace
-   * @param password
    * @throws InternalErrorException
    * @throws PasswordCreationFailedException
    * @throws LoginNotExistsException
@@ -800,7 +797,7 @@ public interface UsersManagerBl {
    * For list of richUser filter all their user attributes and remove all which principal has no access to.
    * 
    * @param sess
-   * @param richUser
+   * @param richUsers
    * @return list of RichUsers with only allowed attributes
    * @throws InternalErrorException 
    */
@@ -845,10 +842,10 @@ public interface UsersManagerBl {
    */
   List<RichUser> findRichUsersWithAttributes(PerunSession sess, String searchString, List<String> attrNames) throws InternalErrorException, UserNotExistsException;
   
-     /**
+  /**
    * Get User to RichUser with attributes.
    * @param sess
-   * @param user
+   * @param includedServiceUsers
    * @param attrsNames
    * @return
    * @throws InternalErrorException

@@ -24,7 +24,6 @@ import cz.metacentrum.perun.webgui.model.*;
 import cz.metacentrum.perun.webgui.tabs.TabItem;
 import cz.metacentrum.perun.webgui.widgets.*;
 import cz.metacentrum.perun.webgui.widgets.CustomButton;
-import cz.metacentrum.perun.webgui.widgets.TabMenu;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -193,9 +192,9 @@ public class AddMemberToResourceTabItem implements TabItem  {
             ScrollPanel tableWrapper = new ScrollPanel();
             tableWrapper.setWidth("100%");
 
-            CellTable<RichMember> table = findMembers.getEmptyTable(new FieldUpdater<RichMember, String>() {
+            CellTable<RichMember> table = findMembers.getEmptyTable(new FieldUpdater<RichMember, RichMember>() {
                 // when user click on a row -> open new tab
-                public void update(int index, RichMember object, String value) {
+                public void update(int index, RichMember object, RichMember value) {
                     session.getTabManager().addTab(new MemberDetailTabItem(object.getId(), 0));
                 }
             });
@@ -421,10 +420,10 @@ public class AddMemberToResourceTabItem implements TabItem  {
 
                     if (UiElements.cantSaveEmptyListDialogBox(assGroupCall.getTableSelectedList())) {
 
-                        final int gid = assGroupCall.getTableSelectedList().get(0).getId();
+                        final Group grp = assGroupCall.getTableSelectedList().get(0);
                         final FlexTable content = new FlexTable();
 
-                        GetAssignedResources getRes = new GetAssignedResources(gid, PerunEntity.GROUP, new JsonCallbackEvents(){
+                        GetAssignedResources getRes = new GetAssignedResources(grp.getId(), PerunEntity.GROUP, new JsonCallbackEvents(){
                             @Override
                             public void onFinished(JavaScriptObject jso){
                                 ArrayList<Resource> rr = JsonUtils.jsoAsList(jso);
@@ -452,7 +451,7 @@ public class AddMemberToResourceTabItem implements TabItem  {
                             public void onClick(ClickEvent clickEvent) {
                                 AddMember request = new AddMember(JsonCallbackEvents.disableButtonEvents(addToGroupButton));
                                 for (RichMember m : selectedMembers.getList()) {
-                                    request.addMemberToGroup(gid, m.getId());
+                                    request.addMemberToGroup(grp, m);
                                 }
                             }
                         }, true);

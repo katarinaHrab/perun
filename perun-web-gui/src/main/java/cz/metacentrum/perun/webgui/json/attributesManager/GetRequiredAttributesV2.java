@@ -21,10 +21,12 @@ import cz.metacentrum.perun.webgui.json.keyproviders.GeneralKeyProvider;
 import cz.metacentrum.perun.webgui.model.Attribute;
 import cz.metacentrum.perun.webgui.model.GeneralObject;
 import cz.metacentrum.perun.webgui.model.PerunError;
-import cz.metacentrum.perun.webgui.widgets.*;
-import cz.metacentrum.perun.webgui.widgets.cells.PerunAttributeValueCell;
-import cz.metacentrum.perun.webgui.widgets.cells.PerunAttributeNameCell;
+import cz.metacentrum.perun.webgui.model.Service;
+import cz.metacentrum.perun.webgui.widgets.AjaxLoaderImage;
+import cz.metacentrum.perun.webgui.widgets.PerunTable;
 import cz.metacentrum.perun.webgui.widgets.cells.PerunAttributeDescriptionCell;
+import cz.metacentrum.perun.webgui.widgets.cells.PerunAttributeNameCell;
+import cz.metacentrum.perun.webgui.widgets.cells.PerunAttributeValueCell;
 import cz.metacentrum.perun.webgui.widgets.cells.PerunCheckboxCell;
 
 import java.util.*;
@@ -33,7 +35,7 @@ import java.util.*;
  * Ajax query to get all required attributes for any entity and specified service
  * 
  * @author Pavel Zlamal <256627@mail.muni.cz>
- * @version $Id$
+ * @version $Id: d49989797bc08e5d51c9e32438b8df78b9c2594c $
  */
 public class GetRequiredAttributesV2 implements JsonCallback, JsonCallbackTable<Attribute> {
 
@@ -58,6 +60,7 @@ public class GetRequiredAttributesV2 implements JsonCallback, JsonCallbackTable<
 	// Json callback events
 	private JsonCallbackEvents events = new JsonCallbackEvents();
 	private boolean checkable = true;
+    private List<Service> servicesToGetAttributesFor = null;
 
 	/**
 	 * Creates a new callback
@@ -74,6 +77,30 @@ public class GetRequiredAttributesV2 implements JsonCallback, JsonCallbackTable<
 		this.ids = ids;
 	}
 
+    /**
+     * Creates a new callback
+     *
+     * @param ids IDS of entities which we want attributes for
+     * @param services services to get required attributes for
+     */
+    public GetRequiredAttributesV2(Map<String, Integer> ids, ArrayList<Service> services) {
+        this.ids = ids;
+        this.servicesToGetAttributesFor = services;
+    }
+
+    /**
+     * Creates a new callback
+     *
+     * @param ids IDS of entities which we want attributes for
+     * @param services services to get required attributes for
+     * @param events external events
+     */
+    public GetRequiredAttributesV2(Map<String, Integer> ids, ArrayList<Service> services, JsonCallbackEvents events) {
+        this.ids = ids;
+        this.servicesToGetAttributesFor = services;
+        this.events = events;
+    }
+
 	/**
 	 * Creates a new callback
 	 *
@@ -85,6 +112,10 @@ public class GetRequiredAttributesV2 implements JsonCallback, JsonCallbackTable<
 		this.ids = ids;
 	}
 
+    public void setServicesToGetAttributesFor(ArrayList<Service> services) {
+        this.servicesToGetAttributesFor = services;
+    }
+
 	/**
 	 * Retrieves data from the RPC
 	 */
@@ -94,6 +125,12 @@ public class GetRequiredAttributesV2 implements JsonCallback, JsonCallbackTable<
 		for (Map.Entry<String, Integer> attr : this.ids.entrySet()) {
 			params += attr.getKey() + "=" + attr.getValue() + "&";
 		}
+        // serialize services
+        if (servicesToGetAttributesFor != null && !servicesToGetAttributesFor.isEmpty()) {
+            for (Service s : servicesToGetAttributesFor) {
+                params += "services[]=" + s.getId() + "&";
+            }
+        }
 		JsonClient js = new JsonClient();
 		js.retrieveData(GetRequiredAttributesV2.JSON_URL, params, this);
 	}
@@ -385,6 +422,15 @@ public class GetRequiredAttributesV2 implements JsonCallback, JsonCallbackTable<
      */
     public MultiSelectionModel<Attribute> getSelectionModel() {
         return selectionModel;
+    }
+
+    /**
+     * Set custom exxternal events
+     *
+     * @param events events to set
+     */
+    public void setEvents(JsonCallbackEvents events) {
+        this.events = events;
     }
 
 }

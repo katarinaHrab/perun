@@ -6,7 +6,6 @@ import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
 import com.google.gwt.user.cellview.client.RowStyles;
-import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.view.client.DefaultSelectionEventManager;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
@@ -19,6 +18,7 @@ import cz.metacentrum.perun.webgui.model.PerunError;
 import cz.metacentrum.perun.webgui.tabs.facilitiestabs.FacilityDetailTabItem;
 import cz.metacentrum.perun.webgui.widgets.AjaxLoaderImage;
 import cz.metacentrum.perun.webgui.widgets.PerunTable;
+import cz.metacentrum.perun.webgui.widgets.UnaccentMultiWordSuggestOracle;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -50,7 +50,7 @@ public class GetFacilityState implements JsonCallback, JsonCallbackTable<Facilit
     private int voId = 0;
 	// oracle support
 	private ArrayList<FacilityState> fullBackup = new ArrayList<FacilityState>();
-	private MultiWordSuggestOracle oracle = new MultiWordSuggestOracle();
+	private UnaccentMultiWordSuggestOracle oracle = new UnaccentMultiWordSuggestOracle();
 
 	/**
 	 * New instance of get facility state
@@ -337,41 +337,37 @@ public class GetFacilityState implements JsonCallback, JsonCallbackTable<Facilit
         }
 	}
 
-	public MultiWordSuggestOracle getOracle(){
+	public UnaccentMultiWordSuggestOracle getOracle(){
 		return this.oracle;
 	}
 	
 	public void filterTable(String text){
-		
-		// always clear selected items
-		selectionModel.clear();
 
 		// store list only for first time
 		if (fullBackup.isEmpty() || fullBackup == null) {
-			for (FacilityState fac : getList()){
-				fullBackup.add(fac);
-			}	
+			fullBackup.addAll(list);
 		}
-		if (text.equalsIgnoreCase("")) {
-			setList(fullBackup);
+
+        // always clear selected items
+        selectionModel.clear();
+        list.clear();
+
+        if (text.equalsIgnoreCase("")) {
+			list.addAll(fullBackup);
 		} else {
-			getList().clear();
 			for (FacilityState fac : fullBackup){
 				// store facility by filter
 				if (fac.getFacility().getName().toLowerCase().startsWith(text.toLowerCase())) {
-					addToTable(fac);
+					list.add(fac);
 				}
 			}
-            dataProvider.flush();
-            dataProvider.refresh();
-			if (getList().isEmpty()) {
-				loaderImage.loadingFinished();
-			}
 		}
-		
-	}
+        dataProvider.flush();
+        dataProvider.refresh();
+        loaderImage.loadingFinished();
+    }
 
-	public void setOracle(MultiWordSuggestOracle oracle) {
+	public void setOracle(UnaccentMultiWordSuggestOracle oracle) {
 		this.oracle = oracle;
 	}
 

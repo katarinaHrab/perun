@@ -19,6 +19,7 @@ import cz.metacentrum.perun.webgui.model.Group;
 import cz.metacentrum.perun.webgui.model.RichMember;
 import cz.metacentrum.perun.webgui.tabs.TabItem;
 import cz.metacentrum.perun.webgui.widgets.CustomButton;
+import cz.metacentrum.perun.webgui.widgets.ExtendedSuggestBox;
 import cz.metacentrum.perun.webgui.widgets.TabMenu;
 
 import java.util.ArrayList;
@@ -78,10 +79,10 @@ public class MemberAddToGroupTabItem implements TabItem {
                         if (i == list.size()-1) {
                             // last
                             AddMember request = new AddMember(JsonCallbackEvents.closeTabDisableButtonEvents(addButton, tab));
-                            request.addMemberToGroup(list.get(i).getId(), memberId);
+                            request.addMemberToGroup(list.get(i), member);
                         } else {
                             AddMember request = new AddMember(JsonCallbackEvents.disableButtonEvents(addButton));
-                            request.addMemberToGroup(list.get(i).getId(), memberId);
+                            request.addMemberToGroup(list.get(i), member);
                         }
                     }
                 }
@@ -97,7 +98,7 @@ public class MemberAddToGroupTabItem implements TabItem {
             }
         }));
 
-        menu.addFilterWidget(new SuggestBox(groups.getOracle()), new PerunSearchEvent() {
+        menu.addFilterWidget(new ExtendedSuggestBox(groups.getOracle()), new PerunSearchEvent() {
             @Override
             public void searchFor(String text) {
                 groups.filterTable(text);
