@@ -168,6 +168,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
         Attribute attribute = new Attribute(mapOfUserAttributes.get(attributeName));
         return attribute;
     }
+
     
     //Attributes modules.  name => module
     private Map<String, AttributesModuleImplApi> attributesModulesMap = new ConcurrentHashMap<String, AttributesModuleImplApi>();
