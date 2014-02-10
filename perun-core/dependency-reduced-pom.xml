@@ -153,10 +153,7 @@
     </dependency>
   </dependencies>
   <properties>
-<<<<<<< HEAD
-=======
     <skipTests>true</skipTests>
->>>>>>> master
     <powermock.version>1.4.8</powermock.version>
   </properties>
 </project>
