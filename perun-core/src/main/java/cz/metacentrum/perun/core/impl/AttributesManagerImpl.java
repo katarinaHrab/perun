@@ -128,7 +128,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     private ClassLoader classLoader = this.getClass().getClassLoader();
     private NamedParameterJdbcTemplate  namedParameterJdbcTemplate;
    
-    private Map<User,Map<String,Attribute>> cacheByUserAndName = new HashMap<User,Map<String,Attribute>>();
+    private Map<User,Map<String,Attribute>> cacheByUserAndName = new ConcurrentHashMap<User,Map<String,Attribute>>();
     
     public Map<User,Map<String,Attribute>> getCacheByUserAndName() {
         return Collections.unmodifiableMap(cacheByUserAndName);
@@ -139,7 +139,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     }
     
     
-    public void addToCache(User user, Attribute attribute) {
+    public synchronized void addToCache(User user, Attribute attribute) {
         if (cacheByUserAndName.get(user)!=null) {
             cacheByUserAndName.get(user).put(attribute.getName(), attribute);
         }
