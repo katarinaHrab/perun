@@ -36,50 +36,6 @@ import java.util.Map;
  * @author Slavek Licehammer <glory@ics.muni.cz>
  */
 public interface AttributesManagerImplApi {
-    
-  /**
-   * Get map with all users and their attributes stored in cache.
-   * 
-   * @author Katarina Hrabovska
-   * @param null
-   * @return map of users and attributes
-   */
-    Map<User,Map<String,Attribute>> getCacheByUserAndName();
-    
-  /**
-   * Remove all users and attributes from cache.
-   * 
-   * @author Katarina Hrabovska
-   */
-    void flushCache();
-    
-  /**
-   * Add attribute to user in cache.
-   * 
-   * @author Katarina Hrabovska
-   * @param user user to add attribute to
-   * @param attribute attribute of user
-   */
-    void addToCache(User user, Attribute attribute);
-    
-  /**
-   * Remove attribute of user from cache.
-   * 
-   * @author Katarina Hrabovska
-   * @param user user to remove attribute of
-   * @param attribute attribute of user
-   */ 
-    void removeFromCache(User user, AttributeDefinition attribute);
-
-  /**
-   * Get attribute of user from cache.
-   * 
-   * @author Katarina Hrabovska
-   * @param user user to get attribute of
-   * @param attributeName name of attribute
-   * @return attribute, null if user or attribute is not in cache
-   */ 
-    Attribute getFromCache(User user, String attributeName);
 
   /**
    * Get all <b>non-empty</b> attributes associated with the facility.
