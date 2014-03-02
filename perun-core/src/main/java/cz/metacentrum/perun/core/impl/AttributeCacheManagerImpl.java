@@ -10,6 +10,7 @@ import cz.metacentrum.perun.core.api.Attribute;
 import cz.metacentrum.perun.core.api.AttributeDefinition;
 import cz.metacentrum.perun.core.api.AttributeHolders;
 import cz.metacentrum.perun.core.api.PerunBean;
+import cz.metacentrum.perun.core.implApi.AttributeCacheManagerImplApi;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,10 +20,13 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author Katarína Hrabovská <katarina.hrabovska1992@gmail.com>
  */
-public class AttributeCacheManagerImpl {
+public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
     
-    private Map<AttributeHolders,Map<String,Attribute>> applicationCache = new ConcurrentHashMap<AttributeHolders,Map<String,Attribute>>();
+    private Map<AttributeHolders,Map<String,Attribute>> applicationCache; 
     
+    public AttributeCacheManagerImpl() {
+        applicationCache = new ConcurrentHashMap<AttributeHolders,Map<String,Attribute>>();
+    }
     public Map<AttributeHolders,Map<String,Attribute>> getApplicationCache() {
         return Collections.unmodifiableMap(applicationCache);
     }

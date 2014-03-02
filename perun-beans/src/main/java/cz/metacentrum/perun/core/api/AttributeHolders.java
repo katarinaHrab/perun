@@ -39,7 +39,9 @@ public class AttributeHolders {
     public int hashCode() {
         int hash = 7;
         hash = 53 * hash + getPrimary().getId();
-        hash = 53 * hash + getSecondary().getId();
+        if (getSecondary()!=null) {
+            hash = 53 * hash + getSecondary().getId();
+        }
 	return hash;
     } 
     
@@ -49,12 +51,18 @@ public class AttributeHolders {
             return false;
         }
         AttributeHolders attrHolders = (AttributeHolders) obj;
+        if (getSecondary()==null) {
+            return this.getPrimary().equals(attrHolders.getPrimary());
+        }
         return ((this.getPrimary().equals(attrHolders.getPrimary())) && 
                 (this.getSecondary().equals(attrHolders.getSecondary())));
     }
     
     @Override 
     public String toString() {
+        if (getSecondary()==null) {
+            return getPrimary().toString();
+        }
         return "[" + getPrimary().toString() + ", " + getSecondary().toString() + "]";
     }
     
