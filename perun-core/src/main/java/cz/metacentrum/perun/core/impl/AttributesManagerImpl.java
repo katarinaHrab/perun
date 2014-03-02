@@ -46,6 +46,7 @@ import org.springframework.jdbc.support.nativejdbc.CommonsDbcpNativeJdbcExtracto
 import cz.metacentrum.perun.core.api.BeansUtils;
 import cz.metacentrum.perun.core.api.Attribute;
 import cz.metacentrum.perun.core.api.AttributeDefinition;
+import cz.metacentrum.perun.core.api.AttributeHolders;
 import cz.metacentrum.perun.core.api.AttributeRights;
 import cz.metacentrum.perun.core.api.AttributesManager;
 import cz.metacentrum.perun.core.api.Auditable;
@@ -54,6 +55,7 @@ import cz.metacentrum.perun.core.api.Group;
 import cz.metacentrum.perun.core.api.Host;
 import cz.metacentrum.perun.core.api.Member;
 import cz.metacentrum.perun.core.api.Perun;
+import cz.metacentrum.perun.core.api.PerunBean;
 import cz.metacentrum.perun.core.api.PerunSession;
 import cz.metacentrum.perun.core.api.Resource;
 import cz.metacentrum.perun.core.api.RichAttribute;
@@ -127,47 +129,6 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     private LobHandler lobHandler;
     private ClassLoader classLoader = this.getClass().getClassLoader();
     private NamedParameterJdbcTemplate  namedParameterJdbcTemplate;
-   
-    private Map<User,Map<String,Attribute>> cacheByUserAndName = new ConcurrentHashMap<User,Map<String,Attribute>>();
-    
-    public Map<User,Map<String,Attribute>> getCacheByUserAndName() {
-        return Collections.unmodifiableMap(cacheByUserAndName);
-    }
-    
-    public void flushCache() {
-        cacheByUserAndName.clear();
-    }
-    
-    
-    public synchronized void addToCache(User user, Attribute attribute) {
-        if (cacheByUserAndName.get(user)!=null) {
-            cacheByUserAndName.get(user).put(attribute.getName(), attribute);
-        }
-        else {
-            Map<String,Attribute> mapOfUserAttributes = new HashMap<>();
-            mapOfUserAttributes.put(attribute.getName(), attribute);
-            cacheByUserAndName.put(user, mapOfUserAttributes);
-        }
-    }
-    
-    public void removeFromCache(User user, AttributeDefinition attribute) {
-        if (cacheByUserAndName.get(user)!=null) {
-           cacheByUserAndName.get(user).remove(attribute.getName());
-        }
-    }
-
-    public Attribute getFromCache(User user, String attributeName) {
-        if (cacheByUserAndName.get(user)==null) {
-            return null;
-        }
-        Map<String,Attribute> mapOfUserAttributes = new HashMap<>();
-        mapOfUserAttributes = cacheByUserAndName.get(user);
-        if (mapOfUserAttributes.get(attributeName) == null) {
-            return null;
-        }
-        Attribute attribute = new Attribute(mapOfUserAttributes.get(attributeName));
-        return attribute;
-    }
 
     
     //Attributes modules.  name => module

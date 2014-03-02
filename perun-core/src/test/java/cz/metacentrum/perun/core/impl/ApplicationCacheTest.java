@@ -6,8 +6,10 @@ package cz.metacentrum.perun.core.impl;
 
 import cz.metacentrum.perun.core.AbstractPerunIntegrationTest;
 import cz.metacentrum.perun.core.api.Attribute;
+import cz.metacentrum.perun.core.api.AttributeHolders;
 import cz.metacentrum.perun.core.api.AttributesManager;
 import cz.metacentrum.perun.core.api.User;
+import cz.metacentrum.perun.core.implApi.AttributeCacheManagerImplApi;
 import cz.metacentrum.perun.core.implApi.AttributesManagerImplApi;
 import static junit.framework.Assert.assertEquals;
 import org.junit.After;
@@ -24,6 +26,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
         @Autowired
     	protected AttributesManagerImplApi attributesManagerImpl;
+        
+        private AttributeCacheManagerImpl attributeCacheManagerImpl = new AttributeCacheManagerImpl();
 
         //World's variables
         private User user1;
@@ -74,60 +78,61 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
     
     @After
     public void tearDown() {
-        attributesManagerImpl.flushCache();
+        attributeCacheManagerImpl.flushCache();
     }
     
     @Test
         public void addAndGetFromCacheTest() {
-            System.out.println("attributesManagerImpl.addAndGetFromCacheTest");
-            attributesManagerImpl.addToCache(user1, attribute1);
+            System.out.println("attributeCacheManagerImpl.addAndGetFromCacheTest");
+            attributeCacheManagerImpl.addToCache(user1, attribute1);
             Attribute attributeFromCache = new Attribute();
-            attributeFromCache = attributesManagerImpl.getFromCache(user1, attribute1.getName());
+            attributeFromCache = attributeCacheManagerImpl.getFromCache(user1, attribute1.getName());
             assertEquals(attribute1, attributeFromCache);
          }
     
     @Test
         public void removeFromCacheTest() {
-            System.out.println("attributesManagerImpl.removeFromCacheTest");
-            attributesManagerImpl.addToCache(user1, attribute1);
-            attributesManagerImpl.removeFromCache(user1, attribute1);
-            assertEquals(null, attributesManagerImpl.getFromCache(user1, attribute1.getName()));
+            System.out.println("attributeCacheManagerImpl.removeFromCacheTest");
+            attributeCacheManagerImpl.addToCache(user1, attribute1);
+            attributeCacheManagerImpl.removeFromCache(user1, attribute1);
+            assertEquals(null, attributeCacheManagerImpl.getFromCache(user1, attribute1.getName()));
     }
     
     @Test
         public void addMoreAttributesToOneUserTest() {
-            System.out.println("attributesManagerImpl.addMoreAttributesToOneUserTest");
-            attributesManagerImpl.addToCache(user1, attribute1);
-            attributesManagerImpl.addToCache(user1, attribute2);
-            assertEquals(attribute1, attributesManagerImpl.getFromCache(user1, attribute1.getName()));
-            assertEquals(attribute2, attributesManagerImpl.getFromCache(user1, attribute2.getName()));
+            System.out.println("attributeCacheManagerImpl.addMoreAttributesToOneUserTest");
+            attributeCacheManagerImpl.addToCache(user1, attribute1);
+            attributeCacheManagerImpl.addToCache(user1, attribute2);
+            assertEquals(attribute1, attributeCacheManagerImpl.getFromCache(user1, attribute1.getName()));
+            assertEquals(attribute2, attributeCacheManagerImpl.getFromCache(user1, attribute2.getName()));
     }
     
     @Test 
         public void addMoreUsersTest() {
-            System.out.println("attributesManagerImpl.addMoreUsersTest");
-            attributesManagerImpl.addToCache(user1, attribute1);
-            attributesManagerImpl.addToCache(user2, attribute2);
-            assertEquals(attribute1, attributesManagerImpl.getFromCache(user1, attribute1.getName()));
-            assertEquals(attribute2, attributesManagerImpl.getFromCache(user2, attribute2.getName()));
+            System.out.println("attributeCacheManagerImpl.addMoreUsersTest");
+            attributeCacheManagerImpl.addToCache(user1, attribute1);
+            attributeCacheManagerImpl.addToCache(user2, attribute2);
+            assertEquals(attribute1, attributeCacheManagerImpl.getFromCache(user1, attribute1.getName()));
+            assertEquals(attribute2, attributeCacheManagerImpl.getFromCache(user2, attribute2.getName()));
     }
     
     @Test
         public void consistencyOfObjectTest() {
-            System.out.println("attributesManagerImpl.consistencyOfObjectTest");
-            attributesManagerImpl.addToCache(user1, attribute1);
-            attributesManagerImpl.getFromCache(user1, attribute1.getName()).setFriendlyName("name2");
-            String attributeName = attributesManagerImpl.getFromCache(user1, attribute1.getName()).getFriendlyName();
+            System.out.println("attributeCacheManagerImpl.consistencyOfObjectTest");
+            attributeCacheManagerImpl.addToCache(user1, attribute1);
+            attributeCacheManagerImpl.getFromCache(user1, attribute1.getName()).setFriendlyName("name2");
+            String attributeName = attributeCacheManagerImpl.getFromCache(user1, attribute1.getName()).getFriendlyName();
             assertEquals(attribute1.getFriendlyName(), attributeName);
     }
     
     @Test
         public void updateOfAttributeWithDiffValue() {
-            System.out.println("attributesManagerImpl.updateOfAttributeWithDiffValue");
-            attributesManagerImpl.addToCache(user1, attribute1);
+            System.out.println("attributeCacheManagerImpl.updateOfAttributeWithDiffValue");
+            attributeCacheManagerImpl.addToCache(user1, attribute1);
             attribute1.setValue(123);
-            attributesManagerImpl.addToCache(user1, attribute1);
-            assertEquals(123, attributesManagerImpl.getFromCache(user1, attribute1.getName()).getValue());
-            assertEquals(1, attributesManagerImpl.getCacheByUserAndName().get(user1).size());
+            attributeCacheManagerImpl.addToCache(user1, attribute1);
+            assertEquals(123, attributeCacheManagerImpl.getFromCache(user1, attribute1.getName()).getValue());
+            AttributeHolders attrHolder = new AttributeHolders(user1, null);
+            assertEquals(1, attributeCacheManagerImpl.getApplicationCache().get(attrHolder).size());
     }
 }
