@@ -16,6 +16,7 @@ public class PerunTransactionManager extends DataSourceTransactionManager implem
   private static final long serialVersionUID = 1L;
 
   private Auditer auditer;
+  private AttributeCacheManagerImpl cacheManager;
 
   @Override
   protected Object doSuspend(Object transaction) {
@@ -41,12 +42,14 @@ public class PerunTransactionManager extends DataSourceTransactionManager implem
   protected void doCommit(DefaultTransactionStatus status) {
     super.doCommit(status);
     this.getAuditer().flush();
+    this.getCacheManager().flush();
   }
 
   @Override
   protected void doRollback(DefaultTransactionStatus status) {
     super.doRollback(status);
     this.getAuditer().clean();
+    this.getCacheManager().clean();
   }
 
   @Override
@@ -63,4 +66,11 @@ public class PerunTransactionManager extends DataSourceTransactionManager implem
     this.auditer = auditer;
   }
 
+  public AttributeCacheManagerImpl getCacheManager() {
+      return this.cacheManager;
+  }
+  
+  public void setCacheManager(AttributeCacheManagerImpl cacheManager) {
+      this.cacheManager = cacheManager;
+  }
 } 

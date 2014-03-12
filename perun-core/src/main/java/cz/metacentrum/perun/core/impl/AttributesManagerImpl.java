@@ -2120,7 +2120,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
               int numAffected = jdbc.update("delete from user_attr_values where attr_id=? and user_id=?", attribute.getId(), user.getId());
               if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from user_attr_values where attr_id="+ attribute.getId() +" and user_id=" + user.getId());
               if (numAffected == 1) {
-                  cacheManager.addToCache(user, attribute);
+                  cacheManager.addToCacheInTransaction(user, attribute);
                   return true;
               }
               return false;
@@ -2156,7 +2156,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                 }
                                               }
                       )) {
-                          cacheManager.addToCache(user, attribute);
+                          cacheManager.addToCacheInTransaction(user, attribute);
                           return true;
                       }
                       return false;
@@ -2183,14 +2183,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
               } catch(InterruptedException IGNORE) { }
             }
           }     //end of while 
-          cacheManager.addToCache(user, attribute);
+          cacheManager.addToCacheInTransaction(user, attribute);
           return true;
         } else {
           if(attribute.getValue() == null) {
             int numAffected = jdbc.update("delete from user_attr_values where attr_id=? and user_id=?", attribute.getId(), user.getId());
             if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from user_attr_values where attr_id="+ attribute.getId() +" and user_id=" + user.getId());
             if (numAffected == 1) {
-                cacheManager.addToCache(user, attribute);
+                cacheManager.addToCacheInTransaction(user, attribute);
                 return true;
             }
             return false;
@@ -2239,7 +2239,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
               } catch(InterruptedException IGNORE) { }
             }
           }  //end of while 
-        cacheManager.addToCache(user, attribute);
+        cacheManager.addToCacheInTransaction(user, attribute);
         return true;
         }
       } catch (RuntimeException e) {
@@ -3523,7 +3523,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
       try {
         if(0 < jdbc.update("delete from user_attr_values where attr_id=? and user_id=?", attribute.getId(), user.getId())) {
           log.info("Attribute (its value) was removed from user. Attribute={}, user={}", attribute, user);
-          cacheManager.removeFromCache(user, attribute);
+          cacheManager.removeFromCacheInTransaction(user, attribute);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);

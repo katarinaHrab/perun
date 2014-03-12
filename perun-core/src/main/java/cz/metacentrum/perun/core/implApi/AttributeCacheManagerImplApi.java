@@ -15,7 +15,7 @@ import java.util.Map;
 
 /**
  *
- * @author Katarína Hrabovská <katarina.hrabovska1992@gmail.com>
+ * @author Katarína Hrabovská <katarina.hrabovska1992@gmail.com> 
  */
 public interface AttributeCacheManagerImplApi {
     
@@ -37,44 +37,61 @@ public interface AttributeCacheManagerImplApi {
     void flushCache();
     
   /**
-   * Add attribute to couple of attributeHolders in cache.
+   * Add attribute to attributeHolders in cache.
    * 
    * @author Katarina Hrabovska
-   * @param primary 
-   * @param secondary couple of attributeHolders to add attribute to,
-   *                  secondary can be null
+   * @param attributeHolders couple of entities to add attribute to
    * @param attribute attribute of attributeHolders
    */
-    void addToCache(PerunBean primary, PerunBean secondary, Attribute attribute);
-    
+    void addToCache(AttributeHolders attributeHolders, Attribute attribute);
+   
    /**
-    * Add attribute to attributeHolder in cache.
+    * Add attribute of attributeHolders to transaction.
     * 
     * @author Katarina Hrabovska
-    * @param primary attributeHolder to add attribute to
-    * @param attribute attribute of attributeHolder
-    */ 
-    void addToCache(PerunBean primary, Attribute attribute);
+    * @param primaryHolder primary entity of object AttributeHolders
+    * @param secondaryHolder secondary entity of object AttributeHolders, can be null
+    * @param attribute attribute of object AttributeHolders
+    */
+    void addToCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, Attribute attribute);
+    
+   /**
+    * Add attribute of attributeHolders to transaction.
+    * 
+    * @author Katarina Hrabovska
+    * @param primaryHolder primary entity of object AttributeHolders
+    * @param attribute attribute of object AttributeHolders
+    */
+    void addToCacheInTransaction(PerunBean primaryHolder, Attribute attribute);
+    
     
   /**
    * Remove attribute of attributeHolders from cache.
    * 
    * @author Katarina Hrabovska
-   * @param primary 
-   * @param secondary couple of attributeHolders to remove attribute of,
-   *                  secondary can be null
+   * @param attributeHolders couple of entities to remove attribute of,
    * @param attribute attribute of attributeHolders
    */ 
-    void removeFromCache(PerunBean primary, PerunBean secondary, AttributeDefinition attribute);
+    void removeFromCache(AttributeHolders attributeHolders, AttributeDefinition attribute);
 
    /**
-    * Remove attribute of attributeHolder from cache.
+    * Add attribute of attributeHolders to transaction, while removing from DB.
     * 
     * @author Katarina Hrabovska
-    * @param primary attributeHolder to remove attribute of
-    * @param attribute attribute of attributeHolder
+    * @param primaryHolder primary entity of object AttributeHolders
+    * @param secondaryHolder secondary entity of object AttributeHolders, can be null
+    * @param attribute attribute of object AttributeHolders
     */
-    void removeFromCache(PerunBean primary, AttributeDefinition attribute);
+    void removeFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, AttributeDefinition attribute);
+    
+   /**
+    * Add attribute of attributeHolders to transaction, while removing from DB.
+    * 
+    * @author Katarina Hrabovska
+    * @param primaryHolder primary entity of object AttributeHolders
+    * @param attribute attribute of object AttributeHolders
+    */
+    void removeFromCacheInTransaction(PerunBean primaryHolder, AttributeDefinition attribute);
     
   /**
    * Get attribute of attributeHolders from cache.
@@ -97,4 +114,14 @@ public interface AttributeCacheManagerImplApi {
     * @return attribute, null if attributeHolder or attribute is not in cache
     */
     Attribute getFromCache(PerunBean primary, String attributeName);
+    
+   /**
+    * Unbind transaction resource.
+    */
+    void clean();
+   
+   /**
+    * Commit actions from transaction to cache.
+    */
+    void flush();
 }
