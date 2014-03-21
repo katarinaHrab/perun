@@ -87,7 +87,7 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             AttributeHolders attributeHolders = new AttributeHolders(user1, null);
             attributeCacheManagerImpl.addToCache(attributeHolders, attribute1);
             Attribute attributeFromCache = new Attribute();
-            attributeFromCache = attributeCacheManagerImpl.getFromCache(user1, attribute1.getName());
+            attributeFromCache = attributeCacheManagerImpl.getFromCache(attributeHolders, attribute1.getName());
             assertEquals(attribute1, attributeFromCache);
          }
     
@@ -97,7 +97,7 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             AttributeHolders attributeHolders = new AttributeHolders(user1, null);
             attributeCacheManagerImpl.addToCache(attributeHolders, attribute1);
             attributeCacheManagerImpl.removeFromCache(attributeHolders, attribute1);
-            assertEquals(null, attributeCacheManagerImpl.getFromCache(user1, attribute1.getName()));
+            assertEquals(null, attributeCacheManagerImpl.getFromCache(attributeHolders, attribute1.getName()));
     }
     
     @Test
@@ -106,8 +106,8 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             AttributeHolders attributeHolders = new AttributeHolders(user1, null);
             attributeCacheManagerImpl.addToCache(attributeHolders, attribute1);
             attributeCacheManagerImpl.addToCache(attributeHolders, attribute2);
-            assertEquals(attribute1, attributeCacheManagerImpl.getFromCache(user1, attribute1.getName()));
-            assertEquals(attribute2, attributeCacheManagerImpl.getFromCache(user1, attribute2.getName()));
+            assertEquals(attribute1, attributeCacheManagerImpl.getFromCache(attributeHolders, attribute1.getName()));
+            assertEquals(attribute2, attributeCacheManagerImpl.getFromCache(attributeHolders, attribute2.getName()));
     }
     
     @Test 
@@ -117,8 +117,8 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             AttributeHolders attributeHolders2 = new AttributeHolders(user2, null);
             attributeCacheManagerImpl.addToCache(attributeHolders1, attribute1);
             attributeCacheManagerImpl.addToCache(attributeHolders2, attribute2);
-            assertEquals(attribute1, attributeCacheManagerImpl.getFromCache(user1, attribute1.getName()));
-            assertEquals(attribute2, attributeCacheManagerImpl.getFromCache(user2, attribute2.getName()));
+            assertEquals(attribute1, attributeCacheManagerImpl.getFromCache(attributeHolders1, attribute1.getName()));
+            assertEquals(attribute2, attributeCacheManagerImpl.getFromCache(attributeHolders2, attribute2.getName()));
     }
     
     @Test
@@ -126,8 +126,8 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             System.out.println("attributeCacheManagerImpl.consistencyOfObjectTest");
             AttributeHolders attributeHolders = new AttributeHolders(user1, null);
             attributeCacheManagerImpl.addToCache(attributeHolders, attribute1);
-            attributeCacheManagerImpl.getFromCache(user1, attribute1.getName()).setFriendlyName("name2");
-            String attributeName = attributeCacheManagerImpl.getFromCache(user1, attribute1.getName()).getFriendlyName();
+            attributeCacheManagerImpl.getFromCache(attributeHolders, attribute1.getName()).setFriendlyName("name2");
+            String attributeName = attributeCacheManagerImpl.getFromCache(attributeHolders, attribute1.getName()).getFriendlyName();
             assertEquals(attribute1.getFriendlyName(), attributeName);
     }
     
@@ -138,7 +138,7 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             attributeCacheManagerImpl.addToCache(attributeHolders, attribute1);
             attribute1.setValue(123);
             attributeCacheManagerImpl.addToCache(attributeHolders, attribute1);
-            assertEquals(123, attributeCacheManagerImpl.getFromCache(user1, attribute1.getName()).getValue());
+            assertEquals(123, attributeCacheManagerImpl.getFromCache(attributeHolders, attribute1.getName()).getValue());
             AttributeHolders attrHolder = new AttributeHolders(user1, null);
             assertEquals(1, attributeCacheManagerImpl.getApplicationCache().get(attrHolder).size());
     }

@@ -1091,7 +1091,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
 
     public Attribute getAttribute(PerunSession sess, User user, String attributeName) throws InternalErrorException, AttributeNotExistsException {
       //user and user core attributes
-      Attribute attribute = cacheManager.getFromCache(user, attributeName);
+      Attribute attribute = cacheManager.getFromCacheInTransaction(user, attributeName);
       if (attribute != null) {
           return attribute;
       }

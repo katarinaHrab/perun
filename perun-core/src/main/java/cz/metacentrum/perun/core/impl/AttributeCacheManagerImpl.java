@@ -31,7 +31,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * @author Katarína Hrabovská <katarina.hrabovska1992@gmail.com>
  */
 public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
-    
+
     private Map<AttributeHolders,Map<String,Attribute>> applicationCache; 
     
     public AttributeCacheManagerImpl() {
@@ -98,7 +98,6 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
                 TransactionSynchronizationManager.bindResource(this, actionsInTransaction);
             }
             Attribute newAttribute = new Attribute(attribute);
-            newAttribute.setValue("remove");
             if (actionsInTransaction.get(attributeHolders)!=null) {
                 actionsInTransaction.get(attributeHolders).put(attribute.getName(), newAttribute);
             }
@@ -116,19 +115,7 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
         this.removeFromCacheInTransaction(primaryHolder, null, attribute);
     }
     
-    public Attribute getFromCache(PerunBean primaryHolder, PerunBean secondaryHolder, String attributeName) {
-        AttributeHolders attributeHolders = new AttributeHolders(primaryHolder, secondaryHolder);
-        if(TransactionSynchronizationManager.isActualTransactionActive()) {
-            Map<AttributeHolders, Map<String, Attribute>> actionsInTransaction = (Map<AttributeHolders, Map<String, Attribute>>) TransactionSynchronizationManager.getResource(this);
-            if (actionsInTransaction!=null) {
-                if ((actionsInTransaction.get(attributeHolders))!=null) {
-                    Attribute attribute = actionsInTransaction.get(attributeHolders).get(attributeName);
-                    if (attribute!=null) {
-                        return attribute;
-                    }
-                }
-            }
-        }
+    public Attribute getFromCache(AttributeHolders attributeHolders, String attributeName) {
         if (applicationCache.get(attributeHolders)==null) {
             return null;
         }
@@ -141,8 +128,24 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
         return attribute;
     }
     
-    public Attribute getFromCache(PerunBean primaryHolder, String attributeName) {
-        return this.getFromCache(primaryHolder, null, attributeName);
+    public Attribute getFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, String attributeName) {
+        AttributeHolders attributeHolders = new AttributeHolders(primaryHolder, secondaryHolder);
+        if(TransactionSynchronizationManager.isActualTransactionActive()) {
+            Map<AttributeHolders, Map<String, Attribute>> actionsInTransaction = (Map<AttributeHolders, Map<String, Attribute>>) TransactionSynchronizationManager.getResource(this);
+            if (actionsInTransaction!=null) {
+                if ((actionsInTransaction.get(attributeHolders))!=null) {
+                    Attribute attribute = actionsInTransaction.get(attributeHolders).get(attributeName);
+                    if (attribute!=null) {
+                        return attribute;
+                    }
+                }
+            }
+        }
+            return this.getFromCache(attributeHolders, attributeName);
+    }
+    
+    public Attribute getFromCacheInTransaction(PerunBean primaryHolder, String attributeName) {
+        return this.getFromCacheInTransaction(primaryHolder, null, attributeName);
     }
     
     public void clean() {
@@ -158,7 +161,7 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
         for(AttributeHolders attributeHolders: actionsInTransaction.keySet()) {
             Map<String, Attribute> mapOfAttributeHoldersAttributes = actionsInTransaction.get(attributeHolders);
             for(String attributeName: mapOfAttributeHoldersAttributes.keySet()) {
-                if (mapOfAttributeHoldersAttributes.get(attributeName).getValue().equals("remove")) {
+                if (mapOfAttributeHoldersAttributes.get(attributeName).getValue()==null) {
                     this.removeFromCache(attributeHolders, mapOfAttributeHoldersAttributes.get(attributeName));
                 }
                 else {
