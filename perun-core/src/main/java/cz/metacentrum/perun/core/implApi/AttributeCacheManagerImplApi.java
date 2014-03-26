@@ -11,6 +11,7 @@ import cz.metacentrum.perun.core.api.AttributeDefinition;
 import cz.metacentrum.perun.core.api.AttributeHolders;
 import cz.metacentrum.perun.core.api.PerunBean;
 import cz.metacentrum.perun.core.api.User;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,7 +44,7 @@ public interface AttributeCacheManagerImplApi {
    * @param attributeHolders couple of entities to add attribute to
    * @param attribute attribute of attributeHolders
    */
-    void addToCache(AttributeHolders attributeHolders, Attribute attribute);
+    void addAttributeToCache(AttributeHolders attributeHolders, Attribute attribute);
    
    /**
     * Add attribute of attributeHolders to transaction.
@@ -55,7 +56,7 @@ public interface AttributeCacheManagerImplApi {
     * @param secondaryHolder secondary entity of object AttributeHolders, can be null
     * @param attribute attribute of object AttributeHolders
     */
-    void addToCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, Attribute attribute);
+    void addAttributeToCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, Attribute attribute);
     
    /**
     * Add attribute of attributeHolders to transaction.
@@ -65,7 +66,7 @@ public interface AttributeCacheManagerImplApi {
     * @param primaryHolder primary entity of object AttributeHolders
     * @param attribute attribute of object AttributeHolders
     */
-    void addToCacheInTransaction(PerunBean primaryHolder, Attribute attribute);
+    void addAttributeToCacheInTransaction(PerunBean primaryHolder, Attribute attribute);
     
     
   /**
@@ -75,7 +76,7 @@ public interface AttributeCacheManagerImplApi {
    * @param attributeHolders couple of entities to remove attribute of,
    * @param attribute attribute of attributeHolders
    */ 
-    void removeFromCache(AttributeHolders attributeHolders, AttributeDefinition attribute);
+    void removeAttributeFromCache(AttributeHolders attributeHolders, AttributeDefinition attribute);
 
    /**
     * Add attribute of attributeHolders to transaction, until removing from DB.
@@ -87,7 +88,7 @@ public interface AttributeCacheManagerImplApi {
     * @param secondaryHolder secondary entity of object AttributeHolders, can be null
     * @param attribute attribute of object AttributeHolders
     */
-    void removeFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, AttributeDefinition attribute);
+    void removeAttributeFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, AttributeDefinition attribute);
     
    /**
     * Add attribute of attributeHolders to transaction, until removing from DB.
@@ -97,7 +98,7 @@ public interface AttributeCacheManagerImplApi {
     * @param primaryHolder primary entity of object AttributeHolders
     * @param attribute attribute of object AttributeHolders
     */
-    void removeFromCacheInTransaction(PerunBean primaryHolder, AttributeDefinition attribute);
+    void removeAttributeFromCacheInTransaction(PerunBean primaryHolder, AttributeDefinition attribute);
     
   /**
    * Get attribute of attributeHolders from cache.
@@ -107,7 +108,7 @@ public interface AttributeCacheManagerImplApi {
    * @param attributeName name of attribute
    * @return attribute, null if attributeHolders or attribute is not in cache
    */ 
-    Attribute getFromCache(AttributeHolders attributeHolders, String attributeName);
+    Attribute getAttributeFromCache(AttributeHolders attributeHolders, String attributeName);
     
    /**
     * Get attribute of attributeHolders from transaction.
@@ -119,7 +120,7 @@ public interface AttributeCacheManagerImplApi {
     * @param attributeName name of attribute
     * @return attribute, null if attributeHolders or attribute is not in transaction or cache
     */
-    Attribute getFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, String attributeName);
+    Attribute getAttributeFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, String attributeName);
     
     
    /**
@@ -131,7 +132,57 @@ public interface AttributeCacheManagerImplApi {
     * @param attributeName name of attribute
     * @return attribute, null if attributeHolder or attribute is not in transaction or cache
     */
-    Attribute getFromCacheInTransaction(PerunBean primary, String attributeName);
+    Attribute getAttributeFromCacheInTransaction(PerunBean primary, String attributeName);
+   
+    
+    /**
+     * 
+     * @param attributeHolders
+     * @return 
+     */
+    List<Attribute> getAllAttributesFromCache(AttributeHolders attributeHolders);
+    
+    
+    /**
+     * 
+     * @param primaryHolder
+     * @param secondaryHolder
+     * @return 
+     */
+    List<Attribute> getAllAttributesFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder);
+    
+    
+    /**
+     * 
+     * @param primaryHolder
+     * @return 
+     */
+    List<Attribute> getAllAttributesFromCacheInTransaction(PerunBean primaryHolder);
+    
+    /**
+     * 
+     * @param attributeHolders
+     * @param id
+     * @return 
+     */
+    Attribute getAttributeByIdFromCache(AttributeHolders attributeHolders, int id);
+    
+    /**
+     * 
+     * @param primaryHolder
+     * @param secondaryHolder
+     * @param id
+     * @return 
+     */
+    Attribute getAttributeByIdFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, int id);
+   
+    /**
+     * 
+     * @param primaryHolder
+     * @param id
+     * @return 
+     */
+    Attribute getAttributeByIdFromCacheInTransaction(PerunBean primaryHolder, int id);
     
    /**
     * Unbind transaction resource.

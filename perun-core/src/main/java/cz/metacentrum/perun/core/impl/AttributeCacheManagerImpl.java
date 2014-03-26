@@ -46,7 +46,7 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
     }
     
     
-    public synchronized void addToCache(AttributeHolders attributeHolders, Attribute attribute) {
+    public synchronized void addAttributeToCache(AttributeHolders attributeHolders, Attribute attribute) {
         if (applicationCache.get(attributeHolders)!=null) {
             applicationCache.get(attributeHolders).put(attribute.getName(), attribute);
         }
@@ -57,7 +57,7 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
         }
     }
     
-    public void addToCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, Attribute attribute) {
+    public void addAttributeToCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, Attribute attribute) {
         AttributeHolders attributeHolders = new AttributeHolders(primaryHolder, secondaryHolder);
         if(TransactionSynchronizationManager.isActualTransactionActive()) {
             Map<AttributeHolders, Map<String, Attribute>> actionsInTransaction = (Map<AttributeHolders, Map<String, Attribute>>) TransactionSynchronizationManager.getResource(this);
@@ -74,22 +74,22 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
                 actionsInTransaction.put(attributeHolders, mapOfAttributeHoldersAttributes);
             }
         } else {
-            this.addToCache(attributeHolders, attribute);
+            this.addAttributeToCache(attributeHolders, attribute);
         }
     }
     
-    public void addToCacheInTransaction(PerunBean primaryHolder, Attribute attribute){
-        this.addToCacheInTransaction(primaryHolder, null, attribute);
+    public void addAttributeToCacheInTransaction(PerunBean primaryHolder, Attribute attribute){
+        this.addAttributeToCacheInTransaction(primaryHolder, null, attribute);
     }
     
     
-    public void removeFromCache(AttributeHolders attributeHolders, AttributeDefinition attribute) {
+    public void removeAttributeFromCache(AttributeHolders attributeHolders, AttributeDefinition attribute) {
         if (applicationCache.get(attributeHolders)!=null) {
            applicationCache.get(attributeHolders).remove(attribute.getName());
         }
     }
 
-    public void removeFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, AttributeDefinition attribute) {
+    public void removeAttributeFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, AttributeDefinition attribute) {
         AttributeHolders attributeHolders = new AttributeHolders(primaryHolder, secondaryHolder);
         if(TransactionSynchronizationManager.isActualTransactionActive()) {
             Map<AttributeHolders, Map<String, Attribute>> actionsInTransaction = (Map<AttributeHolders, Map<String, Attribute>>) TransactionSynchronizationManager.getResource(this);
@@ -107,15 +107,15 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
                 actionsInTransaction.put(attributeHolders, mapOfAttributeHoldersAttributes);
             }
         } else {
-            this.removeFromCache(attributeHolders, attribute);
+            this.removeAttributeFromCache(attributeHolders, attribute);
         }
     }
     
-    public void removeFromCacheInTransaction(PerunBean primaryHolder, AttributeDefinition attribute) {
-        this.removeFromCacheInTransaction(primaryHolder, null, attribute);
+    public void removeAttributeFromCacheInTransaction(PerunBean primaryHolder, AttributeDefinition attribute) {
+        this.removeAttributeFromCacheInTransaction(primaryHolder, null, attribute);
     }
     
-    public Attribute getFromCache(AttributeHolders attributeHolders, String attributeName) {
+    public Attribute getAttributeFromCache(AttributeHolders attributeHolders, String attributeName) {
         if (applicationCache.get(attributeHolders)==null) {
             return null;
         }
@@ -128,7 +128,7 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
         return attribute;
     }
     
-    public Attribute getFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, String attributeName) {
+    public Attribute getAttributeFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, String attributeName) {
         AttributeHolders attributeHolders = new AttributeHolders(primaryHolder, secondaryHolder);
         if(TransactionSynchronizationManager.isActualTransactionActive()) {
             Map<AttributeHolders, Map<String, Attribute>> actionsInTransaction = (Map<AttributeHolders, Map<String, Attribute>>) TransactionSynchronizationManager.getResource(this);
@@ -141,11 +141,83 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
                 }
             }
         }
-            return this.getFromCache(attributeHolders, attributeName);
+            return this.getAttributeFromCache(attributeHolders, attributeName);
     }
     
-    public Attribute getFromCacheInTransaction(PerunBean primaryHolder, String attributeName) {
-        return this.getFromCacheInTransaction(primaryHolder, null, attributeName);
+    public Attribute getAttributeFromCacheInTransaction(PerunBean primaryHolder, String attributeName) {
+        return this.getAttributeFromCacheInTransaction(primaryHolder, null, attributeName);
+    }
+    
+    public List<Attribute> getAllAttributesFromCache(AttributeHolders attributeHolders) {
+        List<Attribute> listOfAttributes = new ArrayList<>();
+        if (applicationCache.get(attributeHolders)!=null) { 
+            listOfAttributes.addAll(applicationCache.get(attributeHolders).values());
+        }
+        return listOfAttributes;
+    }
+    
+    public List<Attribute> getAllAttributesFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder) {
+        List<Attribute> listOfAttributes = new ArrayList<>();
+        List<Attribute> listOfAttributesFromTransaction = new ArrayList<>();
+        AttributeHolders attributeHolders = new AttributeHolders(primaryHolder, secondaryHolder);
+        if(TransactionSynchronizationManager.isActualTransactionActive()) {
+            Map<AttributeHolders, Map<String, Attribute>> actionsInTransaction = (Map<AttributeHolders, Map<String, Attribute>>) TransactionSynchronizationManager.getResource(this);
+            if (actionsInTransaction!=null) {
+                if ((actionsInTransaction.get(attributeHolders))!=null) {
+                    listOfAttributesFromTransaction.addAll(actionsInTransaction.get(attributeHolders).values());
+                }
+            }
+        }
+        listOfAttributes.addAll(this.getAllAttributesFromCache(attributeHolders));
+        for (Attribute attribute: listOfAttributesFromTransaction) {
+            if (!listOfAttributes.contains(attribute)) {
+                listOfAttributes.add(attribute);
+            }
+        }
+        return listOfAttributes;
+    }
+    
+    public List<Attribute> getAllAttributesFromCacheInTransaction(PerunBean primaryHolder) {
+        return this.getAllAttributesFromCacheInTransaction(primaryHolder, null);
+    }
+    
+    public Attribute getAttributeByIdFromCache(AttributeHolders attributeHolders, int id) {
+        if (applicationCache.get(attributeHolders)==null) {
+            return null;
+        }
+        Map<String,Attribute> mapOfAttributeHoldersAttributes = new HashMap<>();
+        mapOfAttributeHoldersAttributes = applicationCache.get(attributeHolders);
+        List<Attribute> attributes = new ArrayList<>();
+        attributes.addAll(mapOfAttributeHoldersAttributes.values());
+        for (Attribute attributeFromList: attributes) {
+            if (attributeFromList.getId()==id) {
+                return new Attribute(attributeFromList);
+            }
+        }
+        return null;
+    }
+    
+    public Attribute getAttributeByIdFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, int id) {
+        AttributeHolders attributeHolders = new AttributeHolders(primaryHolder, secondaryHolder);
+        if(TransactionSynchronizationManager.isActualTransactionActive()) {
+            Map<AttributeHolders, Map<String, Attribute>> actionsInTransaction = (Map<AttributeHolders, Map<String, Attribute>>) TransactionSynchronizationManager.getResource(this);
+            if (actionsInTransaction!=null) {
+                if ((actionsInTransaction.get(attributeHolders))!=null) {
+                    List<Attribute> attributes = new ArrayList<>();
+                    attributes.addAll(actionsInTransaction.get(attributeHolders).values());
+                    for (Attribute attributeFromList: attributes) {
+                        if (attributeFromList.getId()==id) {
+                            return new Attribute(attributeFromList);
+                        }
+                    }
+                }
+            }
+        }
+            return this.getAttributeByIdFromCache(attributeHolders, id);
+    }
+    
+    public Attribute getAttributeByIdFromCacheInTransaction(PerunBean primaryHolder, int id) {
+         return this.getAttributeByIdFromCacheInTransaction(primaryHolder, null, id);
     }
     
     public void clean() {
@@ -162,10 +234,10 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
             Map<String, Attribute> mapOfAttributeHoldersAttributes = actionsInTransaction.get(attributeHolders);
             for(String attributeName: mapOfAttributeHoldersAttributes.keySet()) {
                 if (mapOfAttributeHoldersAttributes.get(attributeName).getValue()==null) {
-                    this.removeFromCache(attributeHolders, mapOfAttributeHoldersAttributes.get(attributeName));
+                    this.removeAttributeFromCache(attributeHolders, mapOfAttributeHoldersAttributes.get(attributeName));
                 }
                 else {
-                    this.addToCache(attributeHolders, mapOfAttributeHoldersAttributes.get(attributeName));
+                    this.addAttributeToCache(attributeHolders, mapOfAttributeHoldersAttributes.get(attributeName));
                 }
             }
         }
