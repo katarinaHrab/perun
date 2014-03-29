@@ -49,7 +49,7 @@ public interface AttributeCacheManagerImplApi {
    /**
     * Add attribute of attributeHolders to transaction.
     * Retrieve actions for an actual transaction and store their to map. New attribute is added there.
-    * If an actual transaction is not active, it will be called method addToCache.
+    * If an actual transaction is not active, it will be called method addAttributeToCache.
     * 
     * @author Katarina Hrabovska
     * @param primaryHolder primary entity of object AttributeHolders
@@ -60,7 +60,7 @@ public interface AttributeCacheManagerImplApi {
     
    /**
     * Add attribute of attributeHolders to transaction.
-    * Call method addToCacheInTransaction for AttributeHolders, which secondaryHolder is null in.
+    * Call method addAttributeToCacheInTransaction for AttributeHolders, which secondaryHolder is null in.
     * 
     * @author Katarina Hrabovska
     * @param primaryHolder primary entity of object AttributeHolders
@@ -81,7 +81,7 @@ public interface AttributeCacheManagerImplApi {
    /**
     * Add attribute of attributeHolders to transaction, until removing from DB.
     * Retrieve actions for an actual transaction and store their to map. Attribute is added there.
-    * If an actual transaction is not active, it will be called method removeFromCache.
+    * If an actual transaction is not active, it will be called method removeAttributeFromCache.
     * 
     * @author Katarina Hrabovska
     * @param primaryHolder primary entity of object AttributeHolders
@@ -92,13 +92,81 @@ public interface AttributeCacheManagerImplApi {
     
    /**
     * Add attribute of attributeHolders to transaction, until removing from DB.
-    * Call method removeFromCacheInTransaction for AttributeHolders, which secondaryHolder is null in.
+    * Call method removeAttributeFromCacheInTransaction for AttributeHolders, which secondaryHolder is null in.
     * 
     * @author Katarina Hrabovska
     * @param primaryHolder primary entity of object AttributeHolders
     * @param attribute attribute of object AttributeHolders
     */
     void removeAttributeFromCacheInTransaction(PerunBean primaryHolder, AttributeDefinition attribute);
+    
+    /**
+     * Remove all attributes of attributeHolders from cache. If attributeHolders are not in cache or dont have any attributes, nothing happen.
+     * 
+     * @author Katarina Hrabovska
+     * @param attributeHolders couple of entities to remove attribute of
+     */
+    void removeAllAttributesFromCache(AttributeHolders attributeHolders);
+    
+    /**
+     * Add all attributes of attributeHolders to transaction, until removing from DB.
+     * Retrieve actions for an actual transaction and store their to map. Attributes are added there.
+     * If an actual transaction is not active, it will be called method removeAllAtributesFromCache.
+     * 
+     * @author Katarina Hrabovska
+     * @param primaryHolder primary entity of object AttributeHolders
+     * @param secondaryHolder secondary entity of object AttributeHolders, can be null
+     */
+    void removeAllAttributesFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder);
+    
+    /**
+     * Add all attributes of attributeHolders to transaction, until removing from DB.
+     * Call method removeAllAtributesFromCacheInTransaction for AttributeHolders, which secondaryHolder is null in.
+     * 
+     * @author Katarina Hrabovska
+     * @param primaryHolder primary entity of object AttributeHolders
+     */
+    void removeAllAttributesFromCacheInTransaction(PerunBean primaryHolder);
+    
+    /**
+     * Remove all attributes of couple User-Facility for any User from cache. If some couple dont have any attributes, nothing happen.
+     * 
+     * @author Katarina Hrabovska
+     * @param secondaryHolder secondary entity of object AttributeHolders, specifically object of class Facility
+     */
+    void removeAllUserFacilityAttributesForAnyUserFromCache(PerunBean secondaryHolder);
+    
+    /**
+     * Add all attributes of couple User-Facility for any User to transaction, until removing from DB.
+     * Retrieve actions for an actual transaction and store their to map. Attributes are added there.
+     * If an actual transaction is not active, it will be called method removeAllUserFacilityAttributesForAnyUserFromCache.
+     * 
+     * @param secondaryHolder secondary entity of object AttributeHolders, specifically object of class Facility
+     */
+    void removeAllUserFacilityAttributesForAnyUserFromCacheInTransaction(PerunBean secondaryHolder);
+    
+    
+    /**
+     * Remove all attributes of couple User-Facility for the User and its all facilities from cache. 
+     * If some couple dont have any attributes, nothing happen.
+     * 
+     * @author Katarina Hrabovska
+     * @param primaryHolder primary entity of object AttributeHolders, specifically object of class User
+     */
+    void removeAllUserFacilityAttributesFromCache(PerunBean primaryHolder);
+    
+    
+    /**
+     * Add all attributes of couple User-Facility for the User and its all facilities to transaction, until removing from DB.
+     * Retrieve actions for an actual transaction and store their to map. Attributes are added there.
+     * If an actual transaction is not active, it will be called method removeAllUserFacilityAttributesFromCache.
+     * 
+     * @author Katarina Hrabovska
+     * @param primaryHolder primary entity of object AttributeHolders, specifically object of class User
+     */
+    void removeAllUserFacilityAttributesFromCacheInTransaction(PerunBean primaryHolder);
+    
+    
     
   /**
    * Get attribute of attributeHolders from cache.
@@ -113,8 +181,9 @@ public interface AttributeCacheManagerImplApi {
    /**
     * Get attribute of attributeHolders from transaction.
     * Retrieve actions for an actual transaction and store their to map. Attribute is looked for there.
-    * If an actual transaction is not active or attribute is not in, it will be called method getFromCache.
+    * If an actual transaction is not active or attribute is not in, it will be called method getAttributeFromCache.
     * 
+    * @author Katarina Hrabovska
     * @param primaryHolder primary entity of object AttributeHolders
     * @param secondaryHolder secondary entity of object AttributeHolders, can be null
     * @param attributeName name of attribute
@@ -125,62 +194,80 @@ public interface AttributeCacheManagerImplApi {
     
    /**
     * Get attribute of attributeHolder from transaction.
-    * Call method getFromCacheInTransaction for AttributeHolders, which secondaryHolder is null in.
+    * Call method getAttributeFromCacheInTransaction for AttributeHolders, which secondaryHolder is null in.
     * 
     * @author Katarina Hrabovska
-    * @param primary attributeHolder to get attribute of
+    * @param primaryHolder attributeHolder to get attribute of
     * @param attributeName name of attribute
     * @return attribute, null if attributeHolder or attribute is not in transaction or cache
     */
-    Attribute getAttributeFromCacheInTransaction(PerunBean primary, String attributeName);
+    Attribute getAttributeFromCacheInTransaction(PerunBean primaryHolder, String attributeName);
    
     
     /**
+     * Get all attributes of attributeHolders from cache.
      * 
-     * @param attributeHolders
-     * @return 
+     * @author Katarina Hrabovska
+     * @param attributeHolders couple of entities to get attributes of,
+     * @return list of attributes, can be empty, if attributeHolder is not in cache or it doesnt have any attributes.
      */
     List<Attribute> getAllAttributesFromCache(AttributeHolders attributeHolders);
     
     
     /**
+     * Get all attributes of attributeHolders from transaction.
+     * Retrieve actions for an actual transaction and store their to map. Attributes are looked for there.
+     * Then it will be called method getAllAttributesFromCache.
      * 
-     * @param primaryHolder
-     * @param secondaryHolder
-     * @return 
+     * @author Katarina Hrabovska
+     * @param primaryHolder primary entity of object AttributeHolders
+     * @param secondaryHolder secondary entity of object AttributeHolders, can be null
+     * @return list of attributes, can be empty, if attributeHolder is not in cache or it doesnt have any attributes. 
      */
     List<Attribute> getAllAttributesFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder);
     
     
     /**
+     * Get all attributes of attributeHolders from transaction.
+     * Call method getAllAttributesFromCacheInTransaction for AttributeHolders, which secondaryHolder is null in.
      * 
-     * @param primaryHolder
-     * @return 
+     * @author Katarina Hrabovska
+     * @param primaryHolder primary entity of object AttributeHolders
+     * @return list of attributes, can be empty, if attributeHolder is not in cache or it doesnt have any attributes. 
      */
     List<Attribute> getAllAttributesFromCacheInTransaction(PerunBean primaryHolder);
     
     /**
+     * Get attribute of attributeHolders by Id from Cache.
      * 
-     * @param attributeHolders
-     * @param id
-     * @return 
+     * @author Katarina Hrabovska
+     * @param attributeHolders couple of entities to get attribute of,
+     * @param id of attribute, which we want to get
+     * @return attribute, null if attributeHolders or attribute is not in cache
      */
     Attribute getAttributeByIdFromCache(AttributeHolders attributeHolders, int id);
     
     /**
+     * Get attribute of attributeHolders by Id from transaction.
+     * Retrieve actions for an actual transaction and store their to map. Attribute is looked for there.
+     * If an actual transaction is not active or attribute is not in, it will be called method getAttributeByIdFromCache.
      * 
-     * @param primaryHolder
-     * @param secondaryHolder
-     * @param id
-     * @return 
+     * @author Katarina Hrabovska
+     * @param primaryHolder primary entity of object AttributeHolders
+     * @param secondaryHolder secondary entity of object AttributeHolders, can be null
+     * @param id of attribute, which we want to get
+     * @return attribute, null if attributeHolders or attribute is not in transaction
      */
     Attribute getAttributeByIdFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder, int id);
    
     /**
+     * Get attribute of attributeHolders by Id from transaction.
+     * Call method getAttributeByIdFromCacheInTransaction for AttributeHolders, which secondaryHolder is null in.
      * 
-     * @param primaryHolder
-     * @param id
-     * @return 
+     * @author Katarina Hrabovska
+     * @param primaryHolder primary entity of object AttributeHolders
+     * @param id of attribute, which we want to get
+     * @return attribute, null if attributeHolders or attribute is not in transaction
      */
     Attribute getAttributeByIdFromCacheInTransaction(PerunBean primaryHolder, int id);
     

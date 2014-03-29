@@ -9,6 +9,7 @@ import cz.metacentrum.perun.core.api.Attribute;
 import cz.metacentrum.perun.core.api.AttributeHolders;
 import cz.metacentrum.perun.core.api.AttributesManager;
 import cz.metacentrum.perun.core.api.User;
+import cz.metacentrum.perun.core.api.Facility;
 import cz.metacentrum.perun.core.implApi.AttributeCacheManagerImplApi;
 import cz.metacentrum.perun.core.implApi.AttributesManagerImplApi;
 import java.util.ArrayList;
@@ -35,6 +36,9 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
         private User user1;
         private User user2;
         private User user3;
+        private Facility facility1;
+        private Facility facility2;
+        private Facility facility3;
         private Attribute attribute1;
         private Attribute attribute2;
         private Attribute attribute3;
@@ -60,6 +64,12 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
                 user1 = new User();
                 user2 = new User();
                 user3 = new User();
+                
+                //Set facility
+                facility1 = new Facility();
+                facility2 = new Facility();
+                facility3 = new Facility();
+                
         
                 //Set attributes
                 attribute1 = new Attribute();
@@ -165,5 +175,47 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             AttributeHolders attributeHolders = new AttributeHolders(user1, null);
             attributeCacheManagerImpl.addAttributeToCache(attributeHolders, attribute1);
             assertEquals(attribute1, attributeCacheManagerImpl.getAttributeByIdFromCache(attributeHolders, attribute1.getId()));
+        }
+        
+     @Test
+        public void removeAllAttributesFromCache() {
+            System.out.println("attributeCacheManagerImpl.removeAllAttributesFromCache");
+            AttributeHolders attributeHolders = new AttributeHolders(user1, null);
+            attributeCacheManagerImpl.addAttributeToCache(attributeHolders, attribute1);
+            attributeCacheManagerImpl.addAttributeToCache(attributeHolders, attribute2);
+            attributeCacheManagerImpl.removeAllAttributesFromCache(attributeHolders);
+            assertEquals(0, attributeCacheManagerImpl.getApplicationCache().get(attributeHolders).size());
+        }
+        
+      @Test
+        public void removeAllUserFacilityAttributesForAnyUserFromCache() {
+            System.out.println("attributeCacheManagerImpl.removeAllUserFacilityAttributesForAnyUserFromCache");
+            AttributeHolders attributeHolders1 = new AttributeHolders(user1, facility1);
+            AttributeHolders attributeHolders2 = new AttributeHolders(user2, facility1);
+            AttributeHolders attributeHolders3 = new AttributeHolders(user1, null);
+            attributeCacheManagerImpl.addAttributeToCache(attributeHolders1, attribute1);
+            attributeCacheManagerImpl.addAttributeToCache(attributeHolders1, attribute2);
+            attributeCacheManagerImpl.addAttributeToCache(attributeHolders2, attribute1);
+            attributeCacheManagerImpl.addAttributeToCache(attributeHolders3, attribute3);
+            attributeCacheManagerImpl.removeAllUserFacilityAttributesForAnyUserFromCache(facility1);
+            assertEquals(0, attributeCacheManagerImpl.getApplicationCache().get(attributeHolders1).size());
+            assertEquals(0, attributeCacheManagerImpl.getApplicationCache().get(attributeHolders2).size());
+            assertEquals(1, attributeCacheManagerImpl.getApplicationCache().get(attributeHolders3).size());
+        }
+        
+      @Test
+        public void removeAllUserFacilityAttributesFromCache() {
+             System.out.println("attributeCacheManagerImpl.removeAllUserFacilityAttributesFromCache");
+             AttributeHolders attributeHolders1 = new AttributeHolders(user1, facility1);
+             AttributeHolders attributeHolders2 = new AttributeHolders(user1, facility2);
+             AttributeHolders attributeHolders3 = new AttributeHolders(user1, null);
+             attributeCacheManagerImpl.addAttributeToCache(attributeHolders1, attribute1);
+             attributeCacheManagerImpl.addAttributeToCache(attributeHolders1, attribute2);
+             attributeCacheManagerImpl.addAttributeToCache(attributeHolders2, attribute1);
+             attributeCacheManagerImpl.addAttributeToCache(attributeHolders3, attribute3);
+             attributeCacheManagerImpl.removeAllUserFacilityAttributesFromCache(user1);
+             assertEquals(0, attributeCacheManagerImpl.getApplicationCache().get(attributeHolders1).size());
+             assertEquals(0, attributeCacheManagerImpl.getApplicationCache().get(attributeHolders2).size());
+             assertEquals(1, attributeCacheManagerImpl.getApplicationCache().get(attributeHolders3).size());
         }
 }

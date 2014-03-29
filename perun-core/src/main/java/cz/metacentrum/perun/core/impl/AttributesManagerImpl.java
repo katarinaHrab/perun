@@ -1391,13 +1391,19 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           if(attribute.getValue() == null) {
                 int numAffected = jdbc.update("delete from facility_attr_values where attr_id=? and facility_id=?", attribute.getId(), facility.getId());
                 if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from facility_attr_values where attr_id="+ attribute.getId() +" and facility_id=" + facility.getId());
-                return numAffected == 1;
+                if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(facility, attribute);
+                    return true;
+                }
+                return false;
+                        
           }
           int repetatCounter = 0;
-          while(true) {
+          boolean pom = true;
+          while(pom) {
             try {  
                 if(Compatibility.isMergeSupported()) {                    
-                      return 0 < jdbc.execute("merge into facility_attr_values using dual on (attr_id=? and facility_id=?) " +
+                      if (0 < jdbc.execute("merge into facility_attr_values using dual on (attr_id=? and facility_id=?) " +
                                               "when not matched   then insert (attr_id, facility_id, attr_value_text, created_by, modified_by, created_at, modified_at, modified_by_uid, created_by_uid) " +
                                               "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)" +
                                               "when matched       then update set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate(),
@@ -1421,7 +1427,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                   }
                                                 }
                                               }
-                      );
+                      )) {
+                          cacheManager.addAttributeToCacheInTransaction(facility, attribute);
+                          return true;
+                      }
+                      return false;
                 } else {
                     try {
                         jdbc.queryForInt("select attr_id from facility_attr_values where attr_id=? and facility_id=? for update", attribute.getId(), facility.getId());
@@ -1430,12 +1440,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                         jdbc.update("insert into facility_attr_values (attr_id, facility_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                 "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), facility.getId(),
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
-                        return true;
+                        pom = false;
                     }
                     //Exception wasn't thrown -> update
                     jdbc.update("update facility_attr_values set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and facility_id=?",
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), facility.getId());
-                    return true;
+                    pom = false;
                     //throw new InternalErrorException("Set large attribute isn't supported yet for databases without merge statement supported.");
                 }
             } catch(DataIntegrityViolationException ex) {
@@ -1444,12 +1454,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
               } catch(InterruptedException IGNORE) { }
             }
-          }        
+          } 
+          cacheManager.addAttributeToCacheInTransaction(facility, attribute);
+          return true;
         } else {
               if(attribute.getValue() == null) {
                 int numAffected = jdbc.update("delete from facility_attr_values where attr_id=? and facility_id=?", attribute.getId(), facility.getId());
                 if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from facility_attr_values where attr_id="+ attribute.getId() +" and facility_id=" + facility.getId());
-                return numAffected == 1;
+                if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(facility, attribute);
+                    return true;
+                }
+                return false;
               }
 
               try {
@@ -1460,7 +1476,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
               }
 
               int repetatCounter = 0;
-              while(true) {
+              boolean pom = true;
+              while(pom) {
                 try {
                   if(Compatibility.isMergeSupported()) {
                       jdbc.update("merge into facility_attr_values using dual on (attr_id=? and facility_id=?) " +
@@ -1471,7 +1488,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                       sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId(),
                                       BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId() 
                       );
-                      return true;
+                      pom = false;
                   } else {
                       try {
                         jdbc.queryForInt("select attr_id from facility_attr_values where attr_id=? and facility_id=? for update", attribute.getId(), facility.getId());
@@ -1480,12 +1497,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                         jdbc.update("insert into facility_attr_values (attr_id, facility_id, attr_value, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                             "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), facility.getId(),
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId()); 
-                        return true;
+                        pom = false;
                       }
                       //Exception wasn't thrown -> update
                       jdbc.update("update facility_attr_values set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and facility_id=?",
                               BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), facility.getId());
-                      return true;
+                      pom = false;
                   }
                 } catch(DataIntegrityViolationException ex) {
                   if(++repetatCounter > MERGE_TRY_CNT) throw new InternalErrorException("SQL merger (or other UPSERT command) failed more than " + MERGE_TRY_CNT + " times.", ex);
@@ -1494,6 +1511,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                   } catch(InterruptedException IGNORE) { }
                 }
               }
+              cacheManager.addAttributeToCacheInTransaction(facility, attribute);
+              return true;
             }
         } catch (RuntimeException e) {
                 throw new InternalErrorException(e);
@@ -1506,13 +1525,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           if(attribute.getValue() == null) {
                 int numAffected = jdbc.update("delete from vo_attr_values where attr_id=? and vo_id=?", attribute.getId(), vo.getId());
                 if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from vo_attr_values where attr_id="+ attribute.getId() +" and vo_id=" + vo.getId());
-                return numAffected == 1;
+                if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(vo, attribute);
+                    return true;
+                }
+                return false;
           }
           int repetatCounter = 0;
-          while(true) {
+          boolean pom = true;
+          while(pom) {
             try {  
                 if(Compatibility.isMergeSupported()) {
-                      return 0 < jdbc.execute("merge into vo_attr_values using dual on (attr_id=? and vo_id=?) " +
+                      if (0 < jdbc.execute("merge into vo_attr_values using dual on (attr_id=? and vo_id=?) " +
                                               "when not matched   then insert (attr_id, vo_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " + 
                                               "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)" +
                                               "when matched       then update set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate(),
@@ -1536,7 +1560,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                   }
                                                 }
                                               }
-                      );
+                      )) {
+                         cacheManager.addAttributeToCacheInTransaction(vo, attribute);
+                         return true; 
+                      }
+                      return false;
                 } else {
                     try {
                         jdbc.queryForInt("select attr_id from vo_attr_values where attr_id=? and vo_id=? for update", attribute.getId(), vo.getId());
@@ -1546,12 +1574,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                 "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), vo.getId(),
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
 
-                        return true;
+                        pom = false;
                     }
                     //Exception wasn't thrown -> update
                     jdbc.update("update vo_attr_values set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and vo_id=?",
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), vo.getId());
-                    return true;
+                    pom = false;
                   //throw new InternalErrorException("Set large attribute isn't supported yet for databases without merge statement supported.");
                 }
             } catch(DataIntegrityViolationException ex) {
@@ -1560,12 +1588,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
               } catch(InterruptedException IGNORE) { }
             }
-          }        
+          } 
+          cacheManager.addAttributeToCacheInTransaction(vo, attribute);
+          return true;
         } else {
               if(attribute.getValue() == null) {
                 int numAffected = jdbc.update("delete from vo_attr_values where attr_id=? and vo_id=?", attribute.getId(), vo.getId());
                 if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from vo_attr_values where attr_id="+ attribute.getId() +" and vo_id=" + vo.getId());
-                return numAffected == 1;
+                if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(vo, attribute);
+                    return true;
+                }
+                return false;
               }
               try {
                   Object value = BeansUtils.stringToAttributeValue(jdbc.queryForObject("select attr_value from vo_attr_values where attr_id=? and vo_id=?", String.class, attribute.getId(), vo.getId()), attribute.getType());
@@ -1575,7 +1609,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
               }
               
               int repetatCounter = 0;
-              while(true) {
+              boolean pom = true;
+              while(pom) {
                 try {
                     if(Compatibility.isMergeSupported()) {
                         jdbc.update("merge into vo_attr_values using dual on (attr_id=? and vo_id=?) " +
@@ -1586,7 +1621,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                         sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId(),
                                         BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId()
                         );
-                        return true;
+                        pom = false;
                     } else {
                         try {
                           jdbc.queryForInt("select attr_id from vo_attr_values where attr_id=? and vo_id=? for update", attribute.getId(), vo.getId());
@@ -1596,12 +1631,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                               "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), vo.getId(),
                               BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId()); 
                                   
-                        return true;
+                        pom = false;
                         }
                         //Exception wasn't thrown -> update
                         jdbc.update("update vo_attr_values set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and vo_id=?",
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), vo.getId());
-                        return true;
+                        pom = false;
                     }
                 } catch(DataIntegrityViolationException ex) {
                     if(++repetatCounter > MERGE_TRY_CNT) throw new InternalErrorException("SQL merger (or other UPSERT command) failed more than " + MERGE_TRY_CNT + " times.", ex);
@@ -1610,6 +1645,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                   } catch(InterruptedException IGNORE) { }
                 }
               }
+              cacheManager.addAttributeToCacheInTransaction(vo, attribute);
+              return true;
             }
         } catch (RuntimeException e) {
                 throw new InternalErrorException(e);
@@ -1622,13 +1659,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           if(attribute.getValue() == null) {
                 int numAffected = jdbc.update("delete from host_attr_values where attr_id=? and host_id=?", attribute.getId(), host.getId());
                 if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from host_attr_values where attr_id="+ attribute.getId() +" and host_id=" + host.getId());
-                return numAffected == 1;
+                if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(host, attribute);
+                    return true;
+                }
+                return false;
           }
           int repetatCounter = 0;
-          while(true) {
+          boolean pom = true;
+          while(pom) {
             try {  
                 if(Compatibility.isMergeSupported()) {
-                      return 0 < jdbc.execute("merge into host_attr_values using dual on (attr_id=? and host_id=?) " +
+                      if (0 < jdbc.execute("merge into host_attr_values using dual on (attr_id=? and host_id=?) " +
                                               "when not matched   then insert (attr_id, host_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                               "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)" +
                                               "when matched       then update set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate(),
@@ -1652,7 +1694,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                   }
                                                 }
                                               }
-                      );
+                      )) {
+                          cacheManager.addAttributeToCacheInTransaction(host, attribute);
+                          return true;
+                      }
+                      return false;
                 } else {
                     try {
                         jdbc.queryForInt("select attr_id from host_attr_values where attr_id=? and host_id=? for update", attribute.getId(), host.getId());
@@ -1661,12 +1707,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                         jdbc.update("insert into host_attr_values (attr_id, host_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                 "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), host.getId(),
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
-                        return true;
+                        pom = false;
                     }
                     //Exception wasn't thrown -> update
                     jdbc.update("update host_attr_values set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and host_id=?",
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), host.getId());
-                    return true;
+                    pom = false;
                   //throw new InternalErrorException("Set large attribute isn't supported yet for databases without merge statement supported.");
                 }
             } catch(DataIntegrityViolationException ex) {
@@ -1675,12 +1721,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
               } catch(InterruptedException IGNORE) { }
             }
-          }        
+          } 
+          cacheManager.addAttributeToCacheInTransaction(host, attribute);
+          return true;
         } else {
               if(attribute.getValue() == null) {
                 int numAffected = jdbc.update("delete from host_attr_values where attr_id=? and host_id=?", attribute.getId(), host.getId());
                 if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from host_attr_values where attr_id="+ attribute.getId() +" and host_id=" + host.getId());
-                return numAffected == 1;
+                if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(host, attribute);
+                    return true;
+                }
+                return false;
               }
               try {
                   Object value = BeansUtils.stringToAttributeValue(jdbc.queryForObject("select attr_value from host_attr_values where attr_id=? and host_id=?", String.class, attribute.getId(), host.getId()), attribute.getType());
@@ -1690,7 +1742,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
               }
               
               int repetatCounter = 0;
-              while(true) {
+              boolean pom = true;
+              while(pom) {
                 try {
                     if(Compatibility.isMergeSupported()) {
                         jdbc.update("merge into host_attr_values using dual on (attr_id=? and host_id=?) " +
@@ -1701,7 +1754,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                         sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId(),
                                         BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId()
                         );
-                        return true;
+                        pom = false;
                     } else {
                         try {
                           jdbc.queryForInt("select attr_id from host_attr_values where attr_id=? and host_id=? for update", attribute.getId(), host.getId());
@@ -1710,12 +1763,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                           jdbc.update("insert into host_attr_values (attr_id, host_id, attr_value, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), host.getId(),
                                BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId()); 
-                        return true;
+                        pom = false;
                         }
                         //Exception wasn't thrown -> update
                         jdbc.update("update host_attr_values set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and host_id=?",
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), host.getId());
-                        return true;
+                        pom = false;
                     }     
                 } catch(DataIntegrityViolationException ex) {
                     if(++repetatCounter > MERGE_TRY_CNT) throw new InternalErrorException("SQL merger (or other UPSERT command) failed more than " + MERGE_TRY_CNT + " times.", ex);
@@ -1724,6 +1777,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                   } catch(InterruptedException IGNORE) { }
                 }
               }
+              cacheManager.addAttributeToCacheInTransaction(host, attribute);
+              return true;
             }
         } catch (RuntimeException e) {
                 throw new InternalErrorException(e);
@@ -1736,13 +1791,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           if(attribute.getValue() == null) {
                 int numAffected = jdbc.update("delete from group_attr_values where attr_id=? and group_id=?", attribute.getId(), group.getId());
                 if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from group_attr_values where attr_id="+ attribute.getId() +" and group_id=" + group.getId());
-                return numAffected == 1;
+                if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(group, attribute);
+                    return true;
+                }
+                return false;
           }
           int repetatCounter = 0;
-          while(true) {
+          boolean pom = true;
+          while(pom) {
             try {  
                 if(Compatibility.isMergeSupported()) {
-                      return 0 < jdbc.execute("merge into group_attr_values using dual on (attr_id=? and group_id=?) " +
+                      if (0 < jdbc.execute("merge into group_attr_values using dual on (attr_id=? and group_id=?) " +
                                               "when not matched   then insert (attr_id, group_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +  
                                               "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)" +
                                               "when matched       then update set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate(),
@@ -1766,7 +1826,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                   }
                                                 }
                                               }
-                      );
+                      )) {
+                          cacheManager.addAttributeToCacheInTransaction(group, attribute);
+                          return true;
+                      }
+                      return false;
                 } else {
                     try {
                         jdbc.queryForInt("select attr_id from group_attr_values where attr_id=? and group_id=? for update", attribute.getId(), group.getId());
@@ -1775,12 +1839,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                         jdbc.update("insert into group_attr_values (attr_id, group_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                 "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), group.getId(),
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
-                        return true;
+                        pom = false;
                     }
                     //Exception wasn't thrown -> update
                     jdbc.update("update group_attr_values set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and group_id=?",
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), group.getId());
-                    return true;
+                    pom = false;
                   //throw new InternalErrorException("Set large attribute isn't supported yet for databases without merge statement supported.");
                 }
             } catch(DataIntegrityViolationException ex) {
@@ -1789,12 +1853,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
               } catch(InterruptedException IGNORE) { }
             }
-          }        
+          } 
+          cacheManager.addAttributeToCacheInTransaction(group, attribute);
+          return true;
         } else {
               if(attribute.getValue() == null) {
                 int numAffected = jdbc.update("delete from group_attr_values where attr_id=? and group_id=?", attribute.getId(), group.getId());
                 if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from group_attr_values where attr_id="+ attribute.getId() +" and group_id=" + group.getId());
-                return numAffected == 1;
+                if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(group, attribute);
+                    return true;
+                }
+                return false;
               }
               try {
                   Object value = BeansUtils.stringToAttributeValue(jdbc.queryForObject("select attr_value from group_attr_values where attr_id=? and group_id=?", String.class, attribute.getId(), group.getId()), attribute.getType());
@@ -1804,7 +1874,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
               }
               
               int repetatCounter = 0;
-              while(true) {
+              boolean pom = true;
+              while(pom) {
                 try {
                     if(Compatibility.isMergeSupported()) {
                         jdbc.update("merge into group_attr_values using dual on (attr_id=? and group_id=?) " +
@@ -1815,7 +1886,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                         sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId(),
                                         BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId()
                         );
-                        return true;
+                        pom = false;
                     } else {
                         try {
                           jdbc.queryForInt("select attr_id from group_attr_values where attr_id=? and group_id=? for update", attribute.getId(), group.getId());
@@ -1824,12 +1895,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                           jdbc.update("insert into group_attr_values (attr_id, group_id, attr_value, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                               "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), group.getId(),
                               BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId()); 
-                          return true;
+                          pom = false;
                         }
                         //Exception wasn't thrown -> update
                         jdbc.update("update group_attr_values set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and group_id=?",
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), group.getId());
-                        return true;
+                        pom = false;
                     }
                 } catch(DataIntegrityViolationException ex) {
                     if(++repetatCounter > MERGE_TRY_CNT) throw new InternalErrorException("SQL merger (or other UPSERT command) failed more than " + MERGE_TRY_CNT + " times.", ex);
@@ -1838,6 +1909,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                   } catch(InterruptedException IGNORE) { }
                 }
               }
+              cacheManager.addAttributeToCacheInTransaction(group, attribute);
+              return true;
             }
         } catch (RuntimeException e) {
                 throw new InternalErrorException(e);
@@ -1850,13 +1923,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           if(attribute.getValue() == null) {
                 int numAffected = jdbc.update("delete from resource_attr_values where attr_id=? and resource_id=?", attribute.getId(), resource.getId());
                 if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from resource_attr_values where attr_id="+ attribute.getId() +" and resource_id=" + resource.getId());
-                return numAffected == 1;
+                if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(resource, attribute);
+                    return true;
+                }
+                return false;
           }
           int repetatCounter = 0;
-          while(true) {
+          boolean pom = true;
+          while(pom) {
             try {  
                 if(Compatibility.isMergeSupported()) {
-                      return 0 < jdbc.execute("merge into resource_attr_values using dual on (attr_id=? and resource_id=?) " +
+                      if  (0 < jdbc.execute("merge into resource_attr_values using dual on (attr_id=? and resource_id=?) " +
                                               "when not matched   then insert (attr_id, resource_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                               "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)" +
                                               "when matched       then update set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate(),
@@ -1880,7 +1958,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                   }
                                                 }
                                               }
-                      );
+                      )) {
+                            cacheManager.addAttributeToCacheInTransaction(resource, attribute);
+                            return true;
+                        }
+                        return false;
                 } else {
                     try {
                         jdbc.queryForInt("select attr_id from resource_attr_values where attr_id=? and resource_id=? for update", attribute.getId(), resource.getId());
@@ -1889,12 +1971,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                         jdbc.update("insert into resource_attr_values (attr_id, resource_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                 "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), resource.getId(),
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
-                        return true;
+                        pom = false;
                     }
                     //Exception wasn't thrown -> update
                     jdbc.update("update resource_attr_values set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and resource_id=?",
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), resource.getId());
-                    return true;
+                    pom = false;
                   //throw new InternalErrorException("Set large attribute isn't supported yet for databases without merge statement supported.");
                 }
             } catch(DataIntegrityViolationException ex) {
@@ -1903,12 +1985,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
               } catch(InterruptedException IGNORE) { }
             }
-          }        
+          } 
+          cacheManager.addAttributeToCacheInTransaction(resource, attribute);
+          return true;
         } else {
               if(attribute.getValue() == null) {
                 int numAffected = jdbc.update("delete from resource_attr_values where attr_id=? and resource_id=?", attribute.getId(), resource.getId());
                 if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from resource_attr_values where attr_id="+ attribute.getId() +" and resource_id=" + resource.getId());
-                return numAffected == 1;
+                if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(resource, attribute);
+                    return true;
+                }
+                return false;
               }
               try {
                   Object value = BeansUtils.stringToAttributeValue(jdbc.queryForObject("select attr_value from resource_attr_values where attr_id=? and resource_id=?", String.class, attribute.getId(), resource.getId()), attribute.getType());
@@ -1918,7 +2006,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
               }
               
               int repetatCounter = 0;
-              while(true) {
+              boolean pom = true;
+              while(pom) {
                 try {
                     if(Compatibility.isMergeSupported()) {
                         jdbc.update("merge into resource_attr_values using dual on (attr_id=? and resource_id=?) " +
@@ -1930,7 +2019,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                             sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId(),
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId()
                             );
-                        return true;
+                        pom = false;
                     } else {
                         try {
                           jdbc.queryForInt("select attr_id from resource_attr_values where attr_id=? and resource_id=? for update", attribute.getId(), resource.getId());
@@ -1939,12 +2028,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                           jdbc.update("insert into resource_attr_values (attr_id, resource_id, attr_value, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +  
                                "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), resource.getId(),
                                BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId()); 
-                          return true;
+                          pom = false;
                         }
                         //Exception wasn't thrown -> update
                         jdbc.update("update resource_attr_values set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and resource_id=?",
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), resource.getId());
-                        return true;
+                        pom = false;
                     }
                 } catch(DataIntegrityViolationException ex) {
                     if(++repetatCounter > MERGE_TRY_CNT) throw new InternalErrorException("SQL merger (or other UPSERT command) failed more than " + MERGE_TRY_CNT + " times.", ex);
@@ -1952,7 +2041,9 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                     Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
                   } catch(InterruptedException IGNORE) { }
                 }
-              }        
+              }
+              cacheManager.addAttributeToCacheInTransaction(resource, attribute);
+              return true;
         }
       } catch (RuntimeException e) {
         throw new InternalErrorException(e);
@@ -1965,13 +2056,17 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           if(attribute.getValue() == null) {
               int numAffected = jdbc.update("delete from member_resource_attr_values where attr_id=? and member_id=? and resource_id=?", attribute.getId(), member.getId(), resource.getId());
               if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from member_resource_attr_values where attr_id="+ attribute.getId() +" and member_id=" + member.getId() + " and resource_id=" + resource.getId());
-              return numAffected == 1;
+              if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(resource, member, attribute);
+                    return true;
+                }
+                return false;
           }
           int repetatCounter = 0;
           while(true) {
             try {  
                 if(Compatibility.isMergeSupported()) {
-                      return 0 < jdbc.execute("merge into member_resource_attr_values using dual on (attr_id=? and resource_id=? and member_id=?) " +
+                      if (0 < jdbc.execute("merge into member_resource_attr_values using dual on (attr_id=? and resource_id=? and member_id=?) " +
                                               "when not matched   then insert (attr_id, resource_id, member_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " + 
                                               "values (?,?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)" +
                                               "when matched       then update set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate(),
@@ -1997,19 +2092,31 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                   }
                                                 }
                                               }
-                      );
+                      )) {
+                          cacheManager.addAttributeToCacheInTransaction(resource, member, attribute);
+                          return true;
+                      }
+                      return false;
                 } else {
                     try {
                         jdbc.queryForInt("select attr_id from member_resource_attr_values where attr_id=? and resource_id=? and member_id=? for update", attribute.getId(), resource.getId(), member.getId());
                     } catch(EmptyResultDataAccessException ex) {
                         //Value doesn't exist -> insert   (and return from this metod)
-                        return 0 < jdbc.update("insert into member_resource_attr_values (attr_id, resource_id, member_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
+                        if (0 < jdbc.update("insert into member_resource_attr_values (attr_id, resource_id, member_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                 "values (?,?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)",attribute.getId(), resource.getId(),
-                                member.getId(), BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
+                                member.getId(), BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId())) {
+                            cacheManager.addAttributeToCacheInTransaction(resource, member, attribute);
+                            return true;
+                        }
+                        return false;
                     }
                     //Exception wasn't thrown -> update
-                    return 0 < jdbc.update("update member_resource_attr_values set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and resource_id=? and member_id=?",
-                            BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), resource.getId(), member.getId());
+                    if (0 < jdbc.update("update member_resource_attr_values set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and resource_id=? and member_id=?",
+                            BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), resource.getId(), member.getId())) {
+                        cacheManager.addAttributeToCacheInTransaction(resource, member, attribute);
+                        return true;
+                    }
+                    return false;
                   //throw new InternalErrorException("Set large attribute isn't supported yet for databases without merge statement supported.");
                 }
             } catch(DataIntegrityViolationException ex) {
@@ -2023,7 +2130,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
             if(attribute.getValue() == null) {
               int numAffected = jdbc.update("delete from member_resource_attr_values where attr_id=? and member_id=? and resource_id=?", attribute.getId(), member.getId(), resource.getId());
               if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from member_resource_attr_values where attr_id="+ attribute.getId() +" and member_id=" + member.getId() + " and resource_id=" + resource.getId());
-              return numAffected == 1;
+              if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(resource, member, attribute);
+                    return true;
+                }
+                return false;
             }
             try {
                 Object value = BeansUtils.stringToAttributeValue(jdbc.queryForObject("select attr_value from member_resource_attr_values where attr_id=? and member_id=? and resource_id=?", String.class, attribute.getId(), member.getId(), resource.getId()), attribute.getType());
@@ -2035,7 +2146,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
             while(true) {
                 try { 
                     if(Compatibility.isMergeSupported()) {
-                        return 0 < jdbc.update("merge into member_resource_attr_values using dual on (attr_id=? and resource_id=? and member_id=?) " +
+                        if (0 < jdbc.update("merge into member_resource_attr_values using dual on (attr_id=? and resource_id=? and member_id=?) " +
                                                "when not matched   then insert (attr_id, resource_id, member_id, attr_value, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                                "values (?,?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)" +
                                                "when matched       then update set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate(),
@@ -2043,19 +2154,31 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(),
                                                sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId(),
                                                BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId()
-                        );
+                        )) {
+                            cacheManager.addAttributeToCacheInTransaction(resource, member, attribute);
+                            return true;
+                        }
+                        return false;
                     } else {
                         try {
                           jdbc.queryForInt("select attr_id from member_resource_attr_values where attr_id=? and resource_id=? and member_id=? for update", attribute.getId(), resource.getId(), member.getId());
                         } catch(EmptyResultDataAccessException ex) {
                           //Value doesn't exist -> insert   (and return from this metod)
-                          return 0 < jdbc.update("insert into member_resource_attr_values (attr_id, resource_id, member_id, attr_value, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
+                          if (0 < jdbc.update("insert into member_resource_attr_values (attr_id, resource_id, member_id, attr_value, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                          "values (?,?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)",attribute.getId(), resource.getId(),
-                                         member.getId(), BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId()); 
+                                         member.getId(), BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId())) {
+                               cacheManager.addAttributeToCacheInTransaction(resource, member, attribute);
+                               return true;
+                          }
+                          return false;
                         }
                         //Exception wasn't thrown -> update
-                        return 0 < jdbc.update("update member_resource_attr_values set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and resource_id=? and member_id=?",
-                                BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), resource.getId(), member.getId());
+                        if (0 < jdbc.update("update member_resource_attr_values set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and resource_id=? and member_id=?",
+                                BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), resource.getId(), member.getId())) {
+                            cacheManager.addAttributeToCacheInTransaction(resource, member, attribute);
+                            return true;
+                        }
+                        return false;
                     }
                 } catch(DataIntegrityViolationException ex) {
                     if(++repetatCounter > MERGE_TRY_CNT) throw new InternalErrorException("SQL merger (or other UPSERT command) failed more than " + MERGE_TRY_CNT + " times.", ex);
@@ -2076,13 +2199,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           if(attribute.getValue() == null) {
               int numAffected = jdbc.update("delete from user_facility_attr_values where attr_id=? and facility_id=? and user_id=?", attribute.getId(), facility.getId(), user.getId());
               if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from user_facility_attr_values where attr_id=" + attribute.getId() + " and facility_id=" + facility.getId() + " and user_id=" + user.getId());
-              return numAffected == 1;
+              if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(facility, user, attribute);
+                    return true;
+                }
+              return false;
           }
           int repetatCounter = 0;
-          while(true) {
+          boolean pom = true;
+          while(pom) {
             try {  
                 if(Compatibility.isMergeSupported()) {
-                      return 0 < jdbc.execute("merge into user_facility_attr_values using dual on (attr_id=? and facility_id=? and user_id=?) " +
+                      if (0 < jdbc.execute("merge into user_facility_attr_values using dual on (attr_id=? and facility_id=? and user_id=?) " +
                                               "when not matched   then insert (attr_id, facility_id, user_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " + 
                                               "values (?,?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)" +
                                               "when matched       then update set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate(),
@@ -2108,7 +2236,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                   }
                                                 }
                                               }
-                      );
+                      )) {
+                          cacheManager.addAttributeToCacheInTransaction(facility, user, attribute);
+                          return true;
+                      }
+                      return false;
                 } else {
                     try {
                         // FIXME ?? This is vulnerable to race conditions ??
@@ -2118,12 +2250,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                         jdbc.update("insert into user_facility_attr_values (attr_id, facility_id, user_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                 "values (?,?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), facility.getId(), user.getId(),
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
-                        return true;
+                        pom = false;
                     }
                     //Exception wasn't thrown -> update
                     jdbc.update("update user_facility_attr_values set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and facility_id=? and user_id=?",
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), facility.getId(), user.getId());
-                    return true;
+                    pom = false;
                   //throw new InternalErrorException("Set large attribute isn't supported yet for databases without merge statement supported.");
                 }
             } catch(DataIntegrityViolationException ex) {
@@ -2132,12 +2264,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
               } catch(InterruptedException IGNORE) { }
             }
-          }        
+          }
+          cacheManager.addAttributeToCacheInTransaction(facility, user, attribute);
+          return true;
         } else {
             if(attribute.getValue() == null) {
               int numAffected = jdbc.update("delete from user_facility_attr_values where attr_id=? and facility_id=? and user_id=?", attribute.getId(), facility.getId(), user.getId());
               if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from user_facility_attr_values where attr_id=" + attribute.getId() + " and facility_id=" + facility.getId() + " and user_id=" + user.getId());
-              return numAffected == 1;
+              if (numAffected == 1) {
+                    cacheManager.addAttributeToCacheInTransaction(facility, user, attribute);
+                    return true;
+                }
+              return false;
             }
             try {
                 Object value = BeansUtils.stringToAttributeValue(jdbc.queryForObject("select attr_value from user_facility_attr_values where attr_id=? and facility_id=? and user_id=?", String.class, attribute.getId(), facility.getId(), user.getId()), attribute.getType());
@@ -2147,7 +2285,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
             }
             
             int repetatCounter = 0;
-            while(true) {
+            boolean pom = true;
+            while(pom) {
                 try {           
                     if(Compatibility.isMergeSupported()) {
                           jdbc.update("merge into user_facility_attr_values using dual on (attr_id=? and facility_id=? and user_id=?) " +
@@ -2159,7 +2298,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                  sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId(),
                                                  BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId()
                           );
-                          return true;
+                          pom = false;
                     } else {
                         try {
                           //FIXME This is vunerable to race conditions
@@ -2169,12 +2308,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                           jdbc.update("insert into user_facility_attr_values (attr_id, facility_id, user_id, attr_value, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                               "values (?,?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), facility.getId(), user.getId(),
                               BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId()); 
-                          return true;
+                          pom = false;
                         }
                         //Exception wasn't thrown -> update
                         jdbc.update("update user_facility_attr_values set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and facility_id=? and user_id=?",
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), facility.getId(), user.getId());
-                        return true;
+                        pom = false;
                     }
                 } catch(DataIntegrityViolationException ex) {
                     if(++repetatCounter > MERGE_TRY_CNT) throw new InternalErrorException("SQL merger (or other UPSERT command) failed more than " + MERGE_TRY_CNT + " times.", ex);
@@ -2182,7 +2321,9 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                     Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
                   } catch(InterruptedException IGNORE) { }
                 }
-              }    
+              }
+              cacheManager.addAttributeToCacheInTransaction(facility, user, attribute);
+              return true;
             }
       } catch(RuntimeException ex) { 
         throw new InternalErrorException(ex);
@@ -2329,14 +2470,19 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           if(attribute.getValue() == null) {
               int numAffected = jdbc.update("delete from member_attr_values where attr_id=? and member_id=?", attribute.getId(), member.getId());
               if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from member_attr_values where attr_id="+ attribute.getId() +" and member_id=" + member.getId());
-              return numAffected == 1;
+              if (numAffected == 1) {
+                cacheManager.addAttributeToCacheInTransaction(member, attribute);
+                return true;
+            }
+            return false;
           }
           int repetatCounter = 0;
-          while(true) {
+          boolean pom = true;
+          while(pom) {
             try {  
                 if(Compatibility.isMergeSupported()) {
                   //TODO return false when attr_value_text is not changed
-                      return 0 < jdbc.execute("merge into member_attr_values using dual on (attr_id=? and member_id=?) " +
+                      if (0 < jdbc.execute("merge into member_attr_values using dual on (attr_id=? and member_id=?) " +
                                               "when not matched   then insert (attr_id, member_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " + 
                                               "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)" +
                                               "when matched       then update set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate(), 
@@ -2360,7 +2506,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                   }
                                                 }
                                               }
-                      );
+                      )) {
+                          cacheManager.addAttributeToCacheInTransaction(member, attribute);
+                          return true;
+                      }
+                      return false;
                 } else {
                     try {
                         //FIXME ?? This is vulnerable to race conditions
@@ -2370,12 +2520,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                         jdbc.update("insert into member_attr_values (attr_id, member_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                 "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), member.getId(),
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
-                        return true;
+                        pom = false;
                     }
                     //Exception wasn't thrown -> update
                     jdbc.update("update member_attr_values set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and member_id=?",
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), member.getId());
-                    return true;
+                    pom = false;
                   //throw new InternalErrorException("Set large attribute isn't supported yet for databases without merge statement supported.");
                 }
             } catch(DataIntegrityViolationException ex) {
@@ -2384,12 +2534,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
               } catch(InterruptedException IGNORE) { }
             }
-          }        
+          } 
+          cacheManager.addAttributeToCacheInTransaction(member, attribute);
+          return true;
         } else {
           if(attribute.getValue() == null) {
             int numAffected = jdbc.update("delete from member_attr_values where attr_id=? and member_id=?", attribute.getId(), member.getId());
             if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from member_attr_values where attr_id="+ attribute.getId() +" and member_id=" + member.getId());
-            return numAffected == 1;
+            if (numAffected == 1) {
+                cacheManager.addAttributeToCacheInTransaction(member, attribute);
+                return true;
+            }
+            return false;
           }
         try {
             Object value = BeansUtils.stringToAttributeValue(jdbc.queryForObject("select attr_value from member_attr_values where attr_id=? and member_id=?", String.class, attribute.getId(), member.getId()), attribute.getType());
@@ -2399,7 +2555,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
         }
         
         int repetatCounter = 0;
-        while(true) {
+        boolean pom = true;
+        while(pom) {
             try { 
                 if(Compatibility.isMergeSupported()) {
                       jdbc.update("merge into member_attr_values using dual on (attr_id=? and member_id=?) " +
@@ -2411,7 +2568,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                              sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId(),
                                              BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId()
                       );
-                      return true;
+                      pom = false;
                 } else {
                     try {
                       //FIXME This is vunerable to race conditions
@@ -2421,12 +2578,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                       jdbc.update("insert into member_attr_values (attr_id, member_id, attr_value, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " + 
                           "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), member.getId(),
                           BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId()); 
-                      return true;
+                      pom = false;
                     }
                     //Exception wasn't thrown -> update
                     jdbc.update("update member_attr_values set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and member_id=?",
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), member.getId());
-                    return true;
+                    pom = false;
                 }
             } catch(DataIntegrityViolationException ex) {
                 if(++repetatCounter > MERGE_TRY_CNT) throw new InternalErrorException("SQL merger (or other UPSERT command) failed more than " + MERGE_TRY_CNT + " times.", ex);
@@ -2434,7 +2591,9 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
               } catch(InterruptedException IGNORE) { }
             }
-          }     
+          }
+          cacheManager.addAttributeToCacheInTransaction(member, attribute);
+          return true;
         }
       } catch (RuntimeException e) {
         throw new InternalErrorException(e);
@@ -2447,13 +2606,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           if(attribute.getValue() == null) {
               int numAffected = jdbc.update("delete from group_resource_attr_values where attr_id=? and resource_id=? and group_id=?", attribute.getId(), resource.getId(), group.getId());
               if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from group_resource_attr_values where attr_id=" + attribute.getId() + " and resource_id=" + resource.getId() + " and group_id=" + group.getId());
-              return numAffected == 1;
+              if (numAffected == 1) {
+                cacheManager.addAttributeToCacheInTransaction(resource, group, attribute);
+                return true;
+              }
+              return false;
           }
           int repetatCounter = 0;
-          while(true) {
+          boolean pom = true;
+          while(pom) {
             try {  
                 if(Compatibility.isMergeSupported()) {
-                      return 0 < jdbc.execute("merge into group_resource_attr_values using dual on (attr_id=? and resource_id=? and group_id=?) " +
+                      if (0 < jdbc.execute("merge into group_resource_attr_values using dual on (attr_id=? and resource_id=? and group_id=?) " +
                                               "when not matched   then insert (attr_id, resource_id, group_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " + 
                                               "values (?,?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)" +
                                               "when matched       then update set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate(),
@@ -2479,7 +2643,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                   }
                                                 }
                                               }
-                      );
+                      )) {
+                          cacheManager.addAttributeToCacheInTransaction(resource, group, attribute);
+                          return true;
+                      }
+                      return false;
                 } else {
                     try {
                         //FIXME This is vulnerable to race conditions
@@ -2489,12 +2657,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                         jdbc.update("insert into group_resource_attr_values (attr_id, resource_id, group_id, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " +
                                 "values (?,?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), resource.getId(), group.getId(),
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
-                        return true;
+                        pom = false;
                     }
                     //Exception wasn't thrown -> update
                     jdbc.update("update group_resource_attr_values set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and resource_id=? and group_id=?",
                             BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), resource.getId(), group.getId());
-                    return true;
+                    pom = false;
                   //throw new InternalErrorException("Set large attribute isn't supported yet for databases without merge statement supported.");
                 }
             } catch(DataIntegrityViolationException ex) {
@@ -2503,12 +2671,18 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 Thread.sleep(Math.round(MERGE_RAND_SLEEP_MAX * Math.random())); //randomized sleep
               } catch(InterruptedException IGNORE) { }
             }
-          }        
+          } 
+          cacheManager.addAttributeToCacheInTransaction(resource, group, attribute);
+          return true;
         } else {
             if(attribute.getValue() == null) {
               int numAffected = jdbc.update("delete from group_resource_attr_values where attr_id=? and resource_id=? and group_id=?", attribute.getId(), resource.getId(), group.getId());
               if(numAffected > 1) throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from group_resource_attr_values where attr_id=" + attribute.getId() + " and resource_id=" + resource.getId() + " and group_id=" + group.getId());
-              return numAffected == 1;
+              if (numAffected == 1) {
+                cacheManager.addAttributeToCacheInTransaction(resource, group, attribute);
+                return true;
+              }
+              return false;
             }
             try {
                 Object value = BeansUtils.stringToAttributeValue(jdbc.queryForObject("select attr_value from group_resource_attr_values where attr_id=? and resource_id=? and group_id=?", String.class, attribute.getId(), resource.getId(), group.getId()), attribute.getType());
@@ -2518,7 +2692,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
             }
 
             int repetatCounter = 0;
-            while(true) {
+            boolean pom = true;
+            while(pom) {
                 try { 
                     if(Compatibility.isMergeSupported()) {
                           jdbc.update("merge into group_resource_attr_values using dual on (attr_id=? and resource_id=? and group_id=?) " +
@@ -2530,7 +2705,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                  sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId(),
                                                  BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId()
                           );
-                          return true;
+                          pom = false;
                     } else {
                         try {
                           //FIXME This is vunerable to race conditions
@@ -2540,12 +2715,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                           jdbc.update("insert into group_resource_attr_values (attr_id, resource_id, group_id, attr_value, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " + 
                               "values (?,?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), resource.getId(), group.getId(),
                               BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
-                          return true;
+                          pom = false;
                         }
                         //Exception wasn't thrown -> update
                         jdbc.update("update group_resource_attr_values set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and resource_id=? and group_id=?",
                                 BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), resource.getId(), group.getId());
-                        return true;
+                        pom = false;
                     }
                 } catch(DataIntegrityViolationException ex) {
                   if(++repetatCounter > MERGE_TRY_CNT) throw new InternalErrorException("SQL merger (or other UPSERT command) failed more than " + MERGE_TRY_CNT + " times.", ex);
@@ -2554,6 +2729,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 } catch(InterruptedException IGNORE) { }
               }
             }
+            cacheManager.addAttributeToCacheInTransaction(resource, group, attribute);
+            return true;
           }         
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3425,7 +3602,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAttribute(PerunSession sess, Facility facility, AttributeDefinition attribute) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from facility_attr_values where attr_id=? and facility_id=?", attribute.getId(), facility.getId())) {
-          log.info("Attribute (its value) was removed from facility. Attribute={}, facility={}.", attribute, facility); 
+          log.info("Attribute (its value) was removed from facility. Attribute={}, facility={}.", attribute, facility);
+          cacheManager.removeAttributeFromCacheInTransaction(facility, attribute);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3435,7 +3613,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAllAttributes(PerunSession sess, Facility facility) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from facility_attr_values where facility_id=?", facility.getId())) {
-          log.info("All attributes (theirs values) were removed from facility. Facility={}.", facility); 
+          log.info("All attributes (theirs values) were removed from facility. Facility={}.", facility);
+          cacheManager.removeAllAttributesFromCacheInTransaction(facility);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3446,6 +3625,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
       try {
         if(0 > jdbc.update("delete from vo_attr_values where attr_id=? and vo_id=?", attribute.getId(), vo.getId())) {
           log.info("Attribute (its value) was removed from vo. Attribute={}, vo={}.", attribute, vo); 
+          cacheManager.removeAttributeFromCacheInTransaction(vo, attribute);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3456,6 +3636,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
       try {
         if(0 < jdbc.update("delete from vo_attr_values where vo_id=?", vo.getId())) {
           log.info("All attributes (theirs values) were removed from vo. Vo={}.", vo); 
+          cacheManager.removeAllAttributesFromCacheInTransaction(vo);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3466,6 +3647,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
       try {
         if(0 > jdbc.update("delete from group_attr_values where attr_id=? and group_id=?", attribute.getId(), group.getId())) {
           log.info("Attribute (its value) was removed from group. Attribute={}, group={}.", attribute, group); 
+          cacheManager.removeAttributeFromCacheInTransaction(group, attribute);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3476,6 +3658,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
       try {
         if(0 < jdbc.update("delete from group_attr_values where group_id=?", group.getId())) {
           log.info("All attributes (theirs values) were removed from group. Group={}.", group); 
+          cacheManager.removeAllAttributesFromCacheInTransaction(group);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3485,7 +3668,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAttribute(PerunSession sess, Resource resource, AttributeDefinition attribute) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from resource_attr_values where attr_id=? and resource_id=?", attribute.getId(), resource.getId())) {
-          log.info("Attribute (its value) was removed from resource. Attribute={}, resource={}.", attribute, resource); 
+          log.info("Attribute (its value) was removed from resource. Attribute={}, resource={}.", attribute, resource);
+          cacheManager.removeAttributeFromCacheInTransaction(resource, attribute);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3495,7 +3679,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
      public void removeAllAttributes(PerunSession sess, Resource resource) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from resource_attr_values where resource_id=?", resource.getId())) {
-          log.info("All attributes (theirs values) were removed from resource. Resource={}.", resource); 
+          log.info("All attributes (theirs values) were removed from resource. Resource={}.", resource);
+          cacheManager.removeAllAttributesFromCacheInTransaction(resource);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3505,7 +3690,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAttribute(PerunSession sess, Resource resource, Member member, AttributeDefinition attribute) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from member_resource_attr_values where attr_id=? and member_id=? and resource_id=?", attribute.getId(), member.getId(), resource.getId())) {
-          log.info("Attribute (its value) was removed from member on resource. Attribute={}, member={}, resource=" + resource, attribute, member); 
+          log.info("Attribute (its value) was removed from member on resource. Attribute={}, member={}, resource=" + resource, attribute, member);
+          cacheManager.removeAttributeFromCacheInTransaction(resource, member, attribute);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3515,7 +3701,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAllAttributes(PerunSession sess, Resource resource, Member member) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from member_resource_attr_values where resource_id=? and member_id=?", resource.getId(), member.getId())) {
-          log.info("All attributes (theirs values) were removed from member on resource. Member={}, resource={}.", member, resource); 
+          log.info("All attributes (theirs values) were removed from member on resource. Member={}, resource={}.", member, resource);
+          cacheManager.removeAllAttributesFromCacheInTransaction(resource, member);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3525,7 +3712,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAttribute(PerunSession sess, Member member, AttributeDefinition attribute) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from member_attr_values where attr_id=? and member_id=?", attribute.getId(), member.getId())) {
-          log.info("Attribute (its value) was removed from member. Attribute={}, member={}", attribute, member); 
+          log.info("Attribute (its value) was removed from member. Attribute={}, member={}", attribute, member);
+          cacheManager.removeAttributeFromCacheInTransaction(member, attribute);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3535,7 +3723,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAllAttributes(PerunSession sess, Member member) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from member_attr_values where member_id=?", member.getId())) {
-          log.info("All attributes (their values) were removed from member. Member={}", member); 
+          log.info("All attributes (their values) were removed from member. Member={}", member);
+          cacheManager.removeAllAttributesFromCacheInTransaction(member);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3545,7 +3734,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAttribute(PerunSession sess, Facility facility, User user, AttributeDefinition attribute) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from user_facility_attr_values where attr_id=? and user_id=? and facility_id=?", attribute.getId(), user.getId(), facility.getId())) {
-          log.info("Attribute (its value) was removed from user on facility. Attribute={}, user={}, facility=" + facility, attribute, user); 
+          log.info("Attribute (its value) was removed from user on facility. Attribute={}, user={}, facility=" + facility, attribute, user);
+          cacheManager.removeAttributeFromCacheInTransaction(facility, user, attribute);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3556,7 +3746,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAllAttributes(PerunSession sess, Facility facility, User user) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from user_facility_attr_values where user_id=? and facility_id=?", user.getId(), facility.getId())) {
-          log.info("All attributes (theirs values) were removed from user on facility. User={}, facility={}", user, facility); 
+          log.info("All attributes (theirs values) were removed from user on facility. User={}, facility={}", user, facility);
+          cacheManager.removeAllAttributesFromCacheInTransaction(facility, user);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3566,7 +3757,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAllUserFacilityAttributesForAnyUser(PerunSession sess, Facility facility) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from user_facility_attr_values where facility_id=?", facility.getId())) {
-          log.info("All attributes (theirs values) were removed from any user on facility. Facility={}", facility); 
+          log.info("All attributes (theirs values) were removed from any user on facility. Facility={}", facility);
+          cacheManager.removeAllUserFacilityAttributesForAnyUserFromCacheInTransaction(facility);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3576,7 +3768,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAllUserFacilityAttributes(PerunSession sess, User user) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from user_facility_attr_values where user_id=?", user.getId())) {
-          log.info("All attributes (theirs values) were removed from user on  all facilities. User={}", user); 
+          log.info("All attributes (theirs values) were removed from user on  all facilities. User={}", user);
+          cacheManager.removeAllUserFacilityAttributesFromCacheInTransaction(user);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3609,7 +3802,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     public void removeAllAttributes(PerunSession sess, User user) throws InternalErrorException {
       try {
         if(0 < jdbc.update("delete from user_attr_values where user_id=?", user.getId())) {
-          log.info("All attributes (their values) were removed from user. User={}", user); 
+          log.info("All attributes (their values) were removed from user. User={}", user);
+          cacheManager.removeAllAttributesFromCacheInTransaction(user);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3619,6 +3813,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
         try {
             if(0 < jdbc.update("delete from group_resource_attr_values where attr_id=? and resource_id=? and group_id=?", attribute.getId(),resource.getId(),group.getId())) {
                 log.info("Attribute (its value) was removed from group on resource. Attribute={}, group={}, resource=" + attribute, group, resource);
+                cacheManager.removeAttributeFromCacheInTransaction(resource, group, attribute);
             }
         } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3629,6 +3824,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
       try {
         if(0 < jdbc.update("delete from group_resource_attr_values where group_id=? and resource_id=?", group.getId(), resource.getId())) {
           log.info("All attributes (theirs values) were removed from group on resource. Group={}, Resource={}", group, resource);
+          cacheManager.removeAllAttributesFromCacheInTransaction(resource, group);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3638,6 +3834,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
         try {
         if(0 < jdbc.update("delete from host_attr_values where attr_id=? and host_id=?", attribute.getId(), host.getId())) {
           log.info("Attribute (its value) was removed from host. Attribute={}, host={}", attribute, host);
+          cacheManager.removeAttributeFromCacheInTransaction(host, attribute);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3648,6 +3845,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
         try {
         if(0 < jdbc.update("delete from host_attr_values where host_id=?", host.getId())) {
           log.info("All attributes (their values) were removed from host. Host={}", host);
+          cacheManager.removeAllAttributesFromCacheInTransaction(host);
         }
       } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);

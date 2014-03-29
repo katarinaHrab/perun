@@ -9,7 +9,9 @@ package cz.metacentrum.perun.core.impl;
 import cz.metacentrum.perun.core.api.Attribute;
 import cz.metacentrum.perun.core.api.AttributeDefinition;
 import cz.metacentrum.perun.core.api.AttributeHolders;
+import cz.metacentrum.perun.core.api.Facility;
 import cz.metacentrum.perun.core.api.PerunBean;
+import cz.metacentrum.perun.core.api.User;
 import cz.metacentrum.perun.core.api.exceptions.AttributeNotExistsException;
 import cz.metacentrum.perun.core.api.exceptions.InternalErrorException;
 import cz.metacentrum.perun.core.api.exceptions.WrongAttributeAssignmentException;
@@ -114,6 +116,130 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
     public void removeAttributeFromCacheInTransaction(PerunBean primaryHolder, AttributeDefinition attribute) {
         this.removeAttributeFromCacheInTransaction(primaryHolder, null, attribute);
     }
+    
+    public void removeAllAttributesFromCache(AttributeHolders attributeHolders) {
+        if (applicationCache.get(attributeHolders)!=null) {
+           applicationCache.get(attributeHolders).clear();
+        }
+    }
+    
+    public void removeAllAttributesFromCacheInTransaction(PerunBean primaryHolder, PerunBean secondaryHolder) {
+        AttributeHolders attributeHolders = new AttributeHolders(primaryHolder, secondaryHolder);
+        if(TransactionSynchronizationManager.isActualTransactionActive()) {
+            Map<AttributeHolders, Map<String, Attribute>> actionsInTransaction = (Map<AttributeHolders, Map<String, Attribute>>) TransactionSynchronizationManager.getResource(this);
+            if(actionsInTransaction == null) {
+                actionsInTransaction = new HashMap<AttributeHolders, Map<String, Attribute>>();
+                TransactionSynchronizationManager.bindResource(this, actionsInTransaction);
+            }
+            List<Attribute> allAttributesOfAttributeHoldersInCache = new ArrayList<>();
+            allAttributesOfAttributeHoldersInCache.addAll(this.getAllAttributesFromCache(attributeHolders));
+            if (actionsInTransaction.get(attributeHolders)!=null) {
+                for (Attribute attribute: allAttributesOfAttributeHoldersInCache) {
+                    attribute.setValue(null);
+                    actionsInTransaction.get(attributeHolders).put(attribute.getName(), attribute);
+                }
+            }
+            else {
+                Map<String, Attribute> mapOfAttributeHoldersAttributes = new HashMap<>();
+                for (Attribute attribute: allAttributesOfAttributeHoldersInCache) {
+                    attribute.setValue(null);
+                    mapOfAttributeHoldersAttributes.put(attribute.getName(), attribute);
+                }
+                actionsInTransaction.put(attributeHolders, mapOfAttributeHoldersAttributes);
+            }
+        } else {
+            this.removeAllAttributesFromCache(attributeHolders);
+        }
+    }
+    
+    public void removeAllAttributesFromCacheInTransaction(PerunBean primaryHolder) {
+        this.removeAllAttributesFromCacheInTransaction(primaryHolder, null);
+    }
+    
+    public void removeAllUserFacilityAttributesForAnyUserFromCache(PerunBean secondaryHolder) { 
+        for (AttributeHolders attributeHolders: applicationCache.keySet()) {
+            if (attributeHolders.getSecondary()!=null) {
+                if ((attributeHolders.getSecondary().equals(secondaryHolder)) && (attributeHolders.getPrimary() instanceof User)) {
+                    this.removeAllAttributesFromCache(attributeHolders);
+                }
+            }
+         }
+    }
+    
+    public void removeAllUserFacilityAttributesForAnyUserFromCacheInTransaction(PerunBean secondaryHolder) {
+            if(TransactionSynchronizationManager.isActualTransactionActive()) {
+            Map<AttributeHolders, Map<String, Attribute>> actionsInTransaction = (Map<AttributeHolders, Map<String, Attribute>>) TransactionSynchronizationManager.getResource(this);
+            if(actionsInTransaction == null) {
+                actionsInTransaction = new HashMap<AttributeHolders, Map<String, Attribute>>();
+                TransactionSynchronizationManager.bindResource(this, actionsInTransaction);
+            }
+            for (AttributeHolders attributeHolders: applicationCache.keySet()) {
+                if (attributeHolders.getSecondary()!=null) {
+                    if ((attributeHolders.getSecondary().equals(secondaryHolder)) && (attributeHolders.getPrimary() instanceof User)) {
+                            if (actionsInTransaction.get(attributeHolders)!=null) {
+                                for (Attribute attribute: applicationCache.get(attributeHolders).values()) {
+                                attribute.setValue(null);
+                                actionsInTransaction.get(attributeHolders).put(attribute.getName(), attribute);
+                                }
+                            }
+                            else {
+                                Map<String, Attribute> mapOfAttributeHoldersAttributes = new HashMap<>();
+                                for (Attribute attribute: applicationCache.get(attributeHolders).values()) {
+                                    attribute.setValue(null);
+                                    mapOfAttributeHoldersAttributes.put(attribute.getName(), attribute);
+                                }
+                                actionsInTransaction.put(attributeHolders, mapOfAttributeHoldersAttributes);
+                            }
+                    }
+                }
+            }
+        } else {
+            this.removeAllUserFacilityAttributesForAnyUserFromCache(secondaryHolder);
+        }
+    }
+    
+    public void removeAllUserFacilityAttributesFromCache(PerunBean primaryHolder) {
+        for (AttributeHolders attributeHolders: applicationCache.keySet()) {
+            if (attributeHolders.getSecondary()!=null) {
+                if ((attributeHolders.getPrimary().equals(primaryHolder)) && (attributeHolders.getSecondary() instanceof Facility)) {
+                    this.removeAllAttributesFromCache(attributeHolders);
+                }
+            }
+         }
+    }
+    
+    public void removeAllUserFacilityAttributesFromCacheInTransaction(PerunBean primaryHolder) {
+        if(TransactionSynchronizationManager.isActualTransactionActive()) {
+            Map<AttributeHolders, Map<String, Attribute>> actionsInTransaction = (Map<AttributeHolders, Map<String, Attribute>>) TransactionSynchronizationManager.getResource(this);
+            if(actionsInTransaction == null) {
+                actionsInTransaction = new HashMap<AttributeHolders, Map<String, Attribute>>();
+                TransactionSynchronizationManager.bindResource(this, actionsInTransaction);
+            }
+            for (AttributeHolders attributeHolders: applicationCache.keySet()) {
+                if (attributeHolders.getSecondary()!=null) {
+                    if ((attributeHolders.getPrimary().equals(primaryHolder)) && (attributeHolders.getSecondary() instanceof Facility)) {
+                            if (actionsInTransaction.get(attributeHolders)!=null) {
+                                for (Attribute attribute: applicationCache.get(attributeHolders).values()) {
+                                attribute.setValue(null);
+                                actionsInTransaction.get(attributeHolders).put(attribute.getName(), attribute);
+                                }
+                            }
+                            else {
+                                Map<String, Attribute> mapOfAttributeHoldersAttributes = new HashMap<>();
+                                for (Attribute attribute: applicationCache.get(attributeHolders).values()) {
+                                    attribute.setValue(null);
+                                    mapOfAttributeHoldersAttributes.put(attribute.getName(), attribute);
+                                }
+                                actionsInTransaction.put(attributeHolders, mapOfAttributeHoldersAttributes);
+                            }
+                    }
+                }
+            }
+        } else {
+            this.removeAllUserFacilityAttributesFromCache(primaryHolder);
+        }
+    }
+    
     
     public Attribute getAttributeFromCache(AttributeHolders attributeHolders, String attributeName) {
         if (applicationCache.get(attributeHolders)==null) {
