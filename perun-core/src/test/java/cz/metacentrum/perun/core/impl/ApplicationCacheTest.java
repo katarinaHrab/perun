@@ -6,6 +6,7 @@ package cz.metacentrum.perun.core.impl;
 
 import cz.metacentrum.perun.core.AbstractPerunIntegrationTest;
 import cz.metacentrum.perun.core.api.Attribute;
+import cz.metacentrum.perun.core.api.AttributeDefinition;
 import cz.metacentrum.perun.core.api.AttributeHolders;
 import cz.metacentrum.perun.core.api.AttributesManager;
 import cz.metacentrum.perun.core.api.User;
@@ -42,6 +43,10 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
         private Attribute attribute1;
         private Attribute attribute2;
         private Attribute attribute3;
+        private AttributeDefinition attributeDefinition1;
+        private AttributeDefinition attributeDefinition2;
+        private String key1;
+        private String key2;
 
     public AttributesManagerImplApi getAttributesManagerImplApi() {
         return attributesManagerImpl;
@@ -89,6 +94,19 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
                 attribute3.setFriendlyName("name3");
                 attribute3.setValue(3);
                 attribute3.setId(333);
+                
+                attributeDefinition1 = new AttributeDefinition();
+                attributeDefinition1.setNamespace(AttributesManager.NS_USER_ATTR_DEF);
+                attributeDefinition1.setFriendlyName("definitionName1");
+                attributeDefinition1.setId(11);
+                
+                attributeDefinition2 = new AttributeDefinition();
+                attributeDefinition2.setNamespace(AttributesManager.NS_USER_ATTR_DEF);
+                attributeDefinition2.setFriendlyName("definitionName2");
+                attributeDefinition2.setId(22);
+                
+                key1 = new String("key1");
+                key2 = new String("key2");
     }
     
     @After
@@ -217,5 +235,45 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
              assertEquals(0, attributeCacheManagerImpl.getApplicationCache().get(attributeHolders1).size());
              assertEquals(0, attributeCacheManagerImpl.getApplicationCache().get(attributeHolders2).size());
              assertEquals(1, attributeCacheManagerImpl.getApplicationCache().get(attributeHolders3).size());
+        }
+        
+      @Test
+        public void addAndGetAttributeToCacheForString() {
+            System.out.println("attributeCacheManagerImpl.addAndGetAttributeToCacheForString");
+            attributeCacheManagerImpl.addAttributeToCacheForString(key1, attribute1);
+            Attribute attributeFromCache = attributeCacheManagerImpl.getAttributeFromCacheForString(key1, attribute1.getName());
+            assertEquals(attribute1, attributeFromCache);
+        }
+        
+      @Test
+        public void removeFromCacheForStringTest() {
+            System.out.println("attributeCacheManagerImpl.removeFromCacheForStringTest");
+            attributeCacheManagerImpl.addAttributeToCacheForString(key1, attribute1);
+            attributeCacheManagerImpl.removeAttributeFromCacheForString(key1, attribute1);
+            assertEquals(null, attributeCacheManagerImpl.getAttributeFromCacheForString(key1, attribute1.getName()));
+        }
+        
+      @Test
+        public void addAndGetAttributeToCacheForAttributes() {
+            System.out.println("attributeCacheManagerImpl.addAndGetAttributeToCacheForAttributes");
+            attributeCacheManagerImpl.addAttributeToCacheForAttributes(attributeDefinition1);
+            AttributeDefinition attributeFromCache = attributeCacheManagerImpl.getAttributeFromCacheForAttributes(attributeDefinition1.getName());
+            assertEquals(attributeDefinition1, attributeFromCache);
+        }
+        
+      @Test
+        public void removeFromCacheForAttributesTest() {
+            System.out.println("attributeCacheManagerImpl.removeFromCacheForAttributesTest");
+            attributeCacheManagerImpl.addAttributeToCacheForAttributes(attributeDefinition1);
+            attributeCacheManagerImpl.removeAttributeFromCacheForAttributes(attributeDefinition1);
+            assertEquals(null, attributeCacheManagerImpl.getAttributeFromCacheForAttributes(attributeDefinition1.getName()));
+        }
+        
+      @Test
+        public void getAttributeByIdFromCacheForAttributes() {
+            System.out.println("attributeCacheManagerImpl.getAttributeByIdFromCacheForAttributes");
+            attributeCacheManagerImpl.addAttributeToCacheForAttributes(attributeDefinition1);
+            AttributeDefinition attributeFromCache = attributeCacheManagerImpl.getAttributeByIdFromCacheForAttributes(attributeDefinition1.getId());
+            assertEquals(attributeDefinition1, attributeFromCache);
         }
 }

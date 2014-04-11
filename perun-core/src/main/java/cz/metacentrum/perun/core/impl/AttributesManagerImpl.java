@@ -1169,6 +1169,10 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     }
 
     public Attribute getAttribute(PerunSession sess, String key, String attributeName) throws InternalErrorException, AttributeNotExistsException {
+        Attribute attribute = cacheManager.getAttributeFromCacheForStringInTransaction(key, attributeName);
+        if (attribute != null) {
+            return attribute;
+        }
         try {
          return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("entityless_attr_values") + " from attr_names " +
                                    "left join    entityless_attr_values     on id=entityless_attr_values.attr_id     and   subject=? " +
@@ -1182,6 +1186,10 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     }
 
     public AttributeDefinition getAttributeDefinition(PerunSession sess, String attributeName) throws InternalErrorException, AttributeNotExistsException {
+      AttributeDefinition attribute = cacheManager.getAttributeFromCacheForAttributesInTransaction(attributeName);
+        if (attribute != null) {
+            return attribute;
+        }
       try {
         return jdbc.queryForObject("select " + attributeDefinitionMappingSelectQuery + " from attr_names where attr_name=?", ATTRIBUTE_DEFINITION_MAPPER, attributeName);
       } catch(EmptyResultDataAccessException ex) {
@@ -1214,6 +1222,10 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     }
 
     public AttributeDefinition getAttributeDefinitionById(PerunSession sess, int id) throws InternalErrorException, AttributeNotExistsException {
+       AttributeDefinition attribute = cacheManager.getAttributeByIdFromCacheForAttributesInTransaction(id);
+        if (attribute != null) {
+            return attribute;
+        }
       try {
         return jdbc.queryForObject("select " + attributeDefinitionMappingSelectQuery + " from attr_names where id=?", ATTRIBUTE_DEFINITION_MAPPER, id);
       } catch(EmptyResultDataAccessException ex) {
@@ -2745,14 +2757,19 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                     if (numAffected > 1) {
                         throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from entityless_attr_values where attr_id=" + attribute.getId() + " and subject=" + key);
                     }
-                    return numAffected == 1;
+                    if (numAffected == 1) {
+                        cacheManager.addAttributeToCacheForStringInTransaction(key, attribute);
+                        return true;
+                    }
+                    return false;
                 }
                 int repetatCounter = 0;
-                while (true) {
+                boolean pom = true;
+                while (pom) {
                     try {
                         if (Compatibility.isMergeSupported()) {
                             //TODO return false when attr_value_text is not changed
-                            return 0 < jdbc.execute("merge into entityless_attr_values using dual on (attr_id=? and subject=?) "
+                            if (0 < jdbc.execute("merge into entityless_attr_values using dual on (attr_id=? and subject=?) "
                                     + "when not matched   then insert (attr_id, subject, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) "
                                     + "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)"
                                     + "when matched       then update set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate(),
@@ -2784,7 +2801,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                                 throw new InternalErrorRuntimeException(ex);
                                             }
                                         }
-                                    });
+                                    })) {
+                                cacheManager.addAttributeToCacheForStringInTransaction(key, attribute);
+                                return true;
+                            }
+                            return false;
                         } else {
                             try {
                                 //FIXME ?? This is vulnerable to race conditions
@@ -2794,12 +2815,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                 jdbc.update("insert into entityless_attr_values (attr_id, subject, attr_value_text, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) "
                                         + "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), key, BeansUtils.attributeValueToString(attribute),
                                         sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
-                                return true;
+                                pom = false;
                             }
                             //Exception wasn't thrown -> update
                             jdbc.update("update entityless_attr_values set attr_value_text=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and subject=?",
                                     BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), key);
-                            return true;
+                            pom = false;
                             //throw new InternalErrorException("Set large attribute isn't supported yet for databases without merge statement supported.");
                         }
                     } catch (DataIntegrityViolationException ex) {
@@ -2812,13 +2833,20 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                         }
                     }
                 }
+                cacheManager.addAttributeToCacheForStringInTransaction(key, attribute);
+                return true;
+                        
             } else {
                 if (attribute.getValue() == null) {
                     int numAffected = jdbc.update("delete from entityless_attr_values where attr_id=? and subject=?", attribute.getId(), key);
                     if (numAffected > 1) {
                         throw new ConsistencyErrorException("Too much rows to delete (" + numAffected + " rows). SQL: delete from entityless_attr_values where attr_id=" + attribute.getId() + " and subject=" + key);
                     }
-                    return numAffected == 1;
+                    if (numAffected == 1) {
+                        cacheManager.addAttributeToCacheForStringInTransaction(key, attribute);
+                        return true;
+                    }
+                    return false;
                 }
                 try {
                     Object value = BeansUtils.stringToAttributeValue(jdbc.queryForObject("select attr_value from entityless_attr_values where attr_id=? and subject=?", String.class, attribute.getId(), key), attribute.getType());
@@ -2830,7 +2858,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                 }
 
                 int repetatCounter = 0;
-                while (true) {
+                boolean pom = true;
+                while (pom) {
                     try {
                         if (Compatibility.isMergeSupported()) {
                             jdbc.update("merge into entityless_attr_values using dual on (attr_id=? and subject=?) "
@@ -2842,7 +2871,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                     sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId(),
                                     BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId()
                                     );
-                            return true;
+                            pom = false;
                         } else {
                             try {
                                 //FIXME This is vunerable to race conditions
@@ -2852,12 +2881,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                                 jdbc.update("insert into entityless_attr_values (attr_id, subject, attr_value, created_by, modified_by, created_at, modified_at, created_by_uid, modified_by_uid) " 
                                      + "values (?,?,?,?,?," + Compatibility.getSysdate() + "," + Compatibility.getSysdate() + ",?,?)", attribute.getId(), key, BeansUtils.attributeValueToString(attribute),
                                      sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), sess.getPerunPrincipal().getUserId());
-                                return true;
+                                pom = false;
                             }
                             //Exception wasn't thrown -> update
                             jdbc.update("update entityless_attr_values set attr_value=?, modified_by=?, modified_by_uid=?, modified_at=" + Compatibility.getSysdate() + " where attr_id=? and subject=?",
                                     BeansUtils.attributeValueToString(attribute), sess.getPerunPrincipal().getActor(), sess.getPerunPrincipal().getUserId(), attribute.getId(), key);
-                            return true;
+                            pom = false;
                         }
                     } catch (DataIntegrityViolationException ex) {
                         if (++repetatCounter > MERGE_TRY_CNT) {
@@ -2869,6 +2898,8 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
                         }
                     }
                 }
+                cacheManager.addAttributeToCacheForStringInTransaction(key, attribute);
+                return true;
             }
         } catch (RuntimeException e) {
             throw new InternalErrorException(e);
@@ -2900,7 +2931,6 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     }
 
     public AttributeDefinition createAttribute(PerunSession sess, AttributeDefinition attribute) throws InternalErrorException, AttributeExistsException {
-
       try {
         int attributeId = Utils.getNewId(jdbc, "attr_names_id_seq");
         
@@ -2911,6 +2941,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
         attribute.setId(attributeId);
         log.info("Attribute created: {}", attribute);
 
+        cacheManager.addAttributeToCacheForAttributesInTransaction(attribute);
         return attribute;
       } catch (DataIntegrityViolationException e) {
         throw new AttributeExistsException("Attribute " + attribute.getName() + " already exists", e);
@@ -2937,6 +2968,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           jdbc.update("delete from attr_names where id=?", attribute.getId());
 
           log.info("Attribute deleted [{}]", attribute);
+          cacheManager.removeAttributeFromCacheForAttributesInTransaction(attribute);
       } catch (RuntimeException e) {
          throw new InternalErrorException(e);
       }
@@ -3593,6 +3625,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
         try {
         if(0 < jdbc.update("delete from entityless_attr_values where attr_id=? and subject=?", attribute.getId(), key)) {
           log.info("Attribute (its value) with key was removed from entityless attributes. Attribute={}, key={}.", attribute, key);
+          cacheManager.removeAttributeFromCacheForStringInTransaction(key, attribute);
         }
         } catch(RuntimeException ex) {
         throw new InternalErrorException(ex);
@@ -3858,6 +3891,10 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
       Utils.notNull(attribute.getNamespace(), "attribute.namespace");
       Utils.notNull(attribute.getType(), "attribute.type");
 
+      AttributeDefinition attributeFromCache = cacheManager.getAttributeFromCacheForAttributesInTransaction(attribute.getName());
+      if (attributeFromCache != null) {
+          return true;
+      }
       return 1 == jdbc.queryForInt("select count('x') from attr_names where attr_name=? and friendly_name=? and namespace=? and id=? and type=?", attribute.getName(), attribute.getFriendlyName(), attribute.getNamespace(), attribute.getId(), attribute.getType());
     }
 
