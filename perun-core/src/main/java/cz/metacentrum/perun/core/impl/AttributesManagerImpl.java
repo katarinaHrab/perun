@@ -1002,7 +1002,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       }
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("facility_attr_values") + " from attr_names left join facility_attr_values on id=attr_id and facility_id=? where attr_name=?", new AttributeRowMapper(sess, this, facility), facility.getId(), attributeName);
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("facility_attr_values") + " from attr_names left join facility_attr_values on id=attr_id and facility_id=? where attr_name=?", new AttributeRowMapper(sess, this, facility), facility.getId(), attributeName);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(facility, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Facility attribute - attribute.name='" + attributeName + "'");
       } catch(RuntimeException ex) {
@@ -1026,7 +1030,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       }
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("vo_attr_values") + " from attr_names left join vo_attr_values on id=attr_id and vo_id=? where attr_name=?", new AttributeRowMapper(sess, this, vo), vo.getId(), attributeName);
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("vo_attr_values") + " from attr_names left join vo_attr_values on id=attr_id and vo_id=? where attr_name=?", new AttributeRowMapper(sess, this, vo), vo.getId(), attributeName);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(vo, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Vo attribute - attribute.name='" + attributeName + "'");
       } catch(RuntimeException ex) {
@@ -1040,7 +1048,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       }
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("group_attr_values") + " from attr_names left join group_attr_values on id=attr_id and group_id=? where attr_name=?", new AttributeRowMapper(sess, this, group), group.getId(), attributeName);
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("group_attr_values") + " from attr_names left join group_attr_values on id=attr_id and group_id=? where attr_name=?", new AttributeRowMapper(sess, this, group), group.getId(), attributeName);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(group, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Group attribute - attribute.name='" + attributeName + "'");
       } catch(RuntimeException ex) {
@@ -1054,7 +1066,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       }
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("resource_attr_values") + " from attr_names left join resource_attr_values on id=attr_id and resource_id=? where attr_name=?", new AttributeRowMapper(sess, this, resource), resource.getId(), attributeName);
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("resource_attr_values") + " from attr_names left join resource_attr_values on id=attr_id and resource_id=? where attr_name=?", new AttributeRowMapper(sess, this, resource), resource.getId(), attributeName);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(resource, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Resource attribute - attribute.name='" + attributeName + "'");
       } catch(RuntimeException ex) {
@@ -1069,12 +1085,15 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
       }
       try {
           //member-resource attributes, member core attributes 
-          return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("mem") + " from attr_names " + 
+          Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("mem") + " from attr_names " + 
                                      "left join   member_resource_attr_values mem    on id=mem.attr_id and mem.resource_id=? and member_id=? " + 
                                      "where attr_name=?",
                                       new AttributeRowMapper(sess, this, null), resource.getId(), member.getId(), attributeName);
+          if (attributeFromDB!=null) {
+              cacheManager.addAttributeToCacheInTransaction(resource, member, attributeFromDB);
+          }
 
-
+          return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute name: \"" + attributeName +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1089,10 +1108,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       }
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("mem") + " from attr_names " + 
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("mem") + " from attr_names " + 
                                    "left join      member_attr_values    mem    on      id=mem.attr_id    and   member_id=? " + 
                                    "where attr_name=?",
                                    new AttributeRowMapper(sess, this, member), member.getId(), attributeName);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(member, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute name: \"" + attributeName +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1106,10 +1129,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       }
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("usr_fac") + " from attr_names " + 
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("usr_fac") + " from attr_names " + 
                                    "left join    user_facility_attr_values     usr_fac      on id=usr_fac.attr_id     and   facility_id=? and user_id=? " +
                                    "where attr_name=?",
                                     new AttributeRowMapper(sess, this, user, facility), facility.getId(), user.getId(), attributeName);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(facility, user, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute name: \"" + attributeName +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1124,10 +1151,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       }
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("usr") + " from attr_names " + 
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("usr") + " from attr_names " + 
                                    "left join      user_attr_values    usr    on      id=usr.attr_id    and   user_id=? " + 
                                    "where attr_name=?",
                                      new AttributeRowMapper(sess, this, user), user.getId(), attributeName);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(user, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute name: \"" + attributeName +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1142,8 +1173,12 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       }
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("host_attr_values") + " from attr_names " +
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("host_attr_values") + " from attr_names " +
                 "left join host_attr_values on id=attr_id and host_id=? where attr_name=?", new AttributeRowMapper(sess, this, host), host.getId(), attributeName);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(host, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Host attribute - attribute.name='" + attributeName + "'");
       } catch(RuntimeException ex) {
@@ -1157,10 +1192,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       } 
       try {
-         return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("grp_res") + " from attr_names " +
+         Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("grp_res") + " from attr_names " +
                                    "left join    group_resource_attr_values     grp_res      on id=grp_res.attr_id     and   resource_id=? and group_id=? " +
                                    "where attr_name=?",
                                     new AttributeRowMapper(sess, this, group, resource), resource.getId(), group.getId(), attributeName);
+         if (attributeFromDB!=null) {
+             cacheManager.addAttributeToCacheInTransaction(resource, group, attributeFromDB);
+         }
+         return attributeFromDB;   
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute name: \"" + attributeName +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1174,10 +1213,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
             return attribute;
         }
         try {
-         return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("entityless_attr_values") + " from attr_names " +
+         Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("entityless_attr_values") + " from attr_names " +
                                    "left join    entityless_attr_values     on id=entityless_attr_values.attr_id     and   subject=? " +
                                    "where attr_name=?",
                                     new AttributeRowMapper(sess, this, null), key, attributeName);
+         if (attributeFromDB!=null) {
+             cacheManager.addAttributeToCacheForStringInTransaction(key, attributeFromDB);
+         }
+         return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute name: \"" + attributeName +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1191,7 +1234,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
             return attribute;
         }
       try {
-        return jdbc.queryForObject("select " + attributeDefinitionMappingSelectQuery + " from attr_names where attr_name=?", ATTRIBUTE_DEFINITION_MAPPER, attributeName);
+        AttributeDefinition attributeFromDB = jdbc.queryForObject("select " + attributeDefinitionMappingSelectQuery + " from attr_names where attr_name=?", ATTRIBUTE_DEFINITION_MAPPER, attributeName);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheForAttributesInTransaction(attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute - attribute.name='" + attributeName + "'", ex);
       } catch(RuntimeException ex) {
@@ -1227,7 +1274,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
             return attribute;
         }
       try {
-        return jdbc.queryForObject("select " + attributeDefinitionMappingSelectQuery + " from attr_names where id=?", ATTRIBUTE_DEFINITION_MAPPER, id);
+        AttributeDefinition attributeFromDB = jdbc.queryForObject("select " + attributeDefinitionMappingSelectQuery + " from attr_names where id=?", ATTRIBUTE_DEFINITION_MAPPER, id);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheForAttributesInTransaction(attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute id= \"" + id +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1241,7 +1292,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       } 
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("facility_attr_values") + " from attr_names left join facility_attr_values on id=attr_id and facility_id=? where id=?", new AttributeRowMapper(sess, this, facility), facility.getId(), id);
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("facility_attr_values") + " from attr_names left join facility_attr_values on id=attr_id and facility_id=? where id=?", new AttributeRowMapper(sess, this, facility), facility.getId(), id);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(facility, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute id= \"" + id +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1255,7 +1310,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       }
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("vo_attr_values") + " from attr_names left join vo_attr_values on id=attr_id and vo_id=? where id=?", new AttributeRowMapper(sess, this, vo), vo.getId(), id);
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("vo_attr_values") + " from attr_names left join vo_attr_values on id=attr_id and vo_id=? where id=?", new AttributeRowMapper(sess, this, vo), vo.getId(), id);
+        if (attributeFromDB != null) {
+            cacheManager.addAttributeToCacheInTransaction(vo, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute id= \"" + id +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1269,7 +1328,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       }
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("resource_attr_values") + " from attr_names left join resource_attr_values on id=attr_id and resource_id=? where id=?", new AttributeRowMapper(sess, this, resource), resource.getId(), id);
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("resource_attr_values") + " from attr_names left join resource_attr_values on id=attr_id and resource_id=? where id=?", new AttributeRowMapper(sess, this, resource), resource.getId(), id);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(resource, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute id= \"" + id +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1283,10 +1346,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       } 
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("grp_res") + " from attr_names " +
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("grp_res") + " from attr_names " +
                                     "left join    group_resource_attr_values     grp_res      on id=grp_res.attr_id     and   resource_id=? and group_id=? " +
                                     "where id=?",
                                     new AttributeRowMapper(sess, this, null), resource.getId(), group.getId(), id);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(resource, group, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute id= \"" + id +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1300,10 +1367,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       }  
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("grp") + " from attr_names " +
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("grp") + " from attr_names " +
                                     "left join group_attr_values grp on id=grp.attr_id and group_id=? " +
                                     "where id=?",
                                     new AttributeRowMapper(sess, this, null), group.getId(), id);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(group, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute id= \"" + id +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1317,7 +1388,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       } 
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("host_attr_values") + " from attr_names left join host_attr_values on id=attr_id and host_id=? where id=?", new AttributeRowMapper(sess, this, host), host.getId(), id);
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("host_attr_values") + " from attr_names left join host_attr_values on id=attr_id and host_id=? where id=?", new AttributeRowMapper(sess, this, host), host.getId(), id);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(host, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute id= \"" + id +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1333,10 +1408,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
       }
       try {
         //member-resource attributes, member core attributes 
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("mem") + " from attr_names " + 
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("mem") + " from attr_names " + 
                                    "left join   member_resource_attr_values mem    on id=mem.attr_id and mem.resource_id=? and member_id=? " + 
                                    "where id=?",
                                     new AttributeRowMapper(sess, this, member), resource.getId(), member.getId(), id);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(resource, member, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute id= \"" + id +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1351,10 +1430,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
       }
       try {
         //member and member core attributes
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("mem") + " from attr_names " + 
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("mem") + " from attr_names " + 
                                     "left join      member_attr_values    mem    on      id=mem.attr_id    and   member_id=? " + 
                                     "where id=?",
                                     new AttributeRowMapper(sess, this, member), member.getId(), id);
+        if (attributeFromDB != null) {
+            cacheManager.addAttributeToCacheInTransaction(member, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute id= \"" + id +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1368,10 +1451,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           return attribute;
       }
       try {
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("usr_fac") + " from attr_names " + 
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("usr_fac") + " from attr_names " + 
                                     "left join    user_facility_attr_values     usr_fac      on id=usr_fac.attr_id     and   facility_id=? and user_id=? " +
                                     "where id=?",
                                     new AttributeRowMapper(sess, this, user, facility), facility.getId(), user.getId(), id);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(facility, user, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute id= \"" + id +"\"", ex);
       } catch(RuntimeException ex) {
@@ -1386,10 +1473,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
       }
       try {
         //user and user core attributes
-        return jdbc.queryForObject("select " + getAttributeMappingSelectQuery("usr") + " from attr_names " + 
+        Attribute attributeFromDB = jdbc.queryForObject("select " + getAttributeMappingSelectQuery("usr") + " from attr_names " + 
                                     "left join      user_attr_values    usr    on      id=usr.attr_id    and   user_id=? " + 
                                     "where id=?",
                                     new AttributeRowMapper(sess, this, user), user.getId(), id);
+        if (attributeFromDB!=null) {
+            cacheManager.addAttributeToCacheInTransaction(user, attributeFromDB);
+        }
+        return attributeFromDB;
       } catch(EmptyResultDataAccessException ex) {
         throw new AttributeNotExistsException("Attribute id= \"" + id +"\"", ex);
       } catch(RuntimeException ex) {
@@ -3895,7 +3986,11 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
       if (attributeFromCache != null) {
           return true;
       }
-      return 1 == jdbc.queryForInt("select count('x') from attr_names where attr_name=? and friendly_name=? and namespace=? and id=? and type=?", attribute.getName(), attribute.getFriendlyName(), attribute.getNamespace(), attribute.getId(), attribute.getType());
+      if (1 == jdbc.queryForInt("select count('x') from attr_names where attr_name=? and friendly_name=? and namespace=? and id=? and type=?", attribute.getName(), attribute.getFriendlyName(), attribute.getNamespace(), attribute.getId(), attribute.getType())) {
+          cacheManager.addAttributeToCacheForAttributesInTransaction(attribute);
+          return true;
+      }
+      return false;
     }
 
     public boolean actionTypeExists(PerunSession sess, ActionType actionType) throws InternalErrorException {
