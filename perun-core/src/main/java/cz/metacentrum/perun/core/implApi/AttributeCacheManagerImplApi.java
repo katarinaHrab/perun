@@ -25,7 +25,6 @@ public interface AttributeCacheManagerImplApi {
    * Get map with all objects and their attributes stored in cache.
    * 
    * @author Katarina Hrabovska
-   * @param null
    * @return map of Objects(attributeHolders, String) and attributes
    */
     Map<Object,Map<String,AttributeDefinition>> getApplicationCache();

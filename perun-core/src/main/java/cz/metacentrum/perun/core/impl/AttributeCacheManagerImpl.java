@@ -12,19 +12,12 @@ import cz.metacentrum.perun.core.api.AttributeHolders;
 import cz.metacentrum.perun.core.api.Facility;
 import cz.metacentrum.perun.core.api.PerunBean;
 import cz.metacentrum.perun.core.api.User;
-import cz.metacentrum.perun.core.api.exceptions.AttributeNotExistsException;
-import cz.metacentrum.perun.core.api.exceptions.InternalErrorException;
-import cz.metacentrum.perun.core.api.exceptions.WrongAttributeAssignmentException;
-import cz.metacentrum.perun.core.api.exceptions.WrongReferenceAttributeValueException;
 import cz.metacentrum.perun.core.implApi.AttributeCacheManagerImplApi;
-import cz.metacentrum.perun.core.implApi.modules.attributes.VirtualAttributesModuleImplApi;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -34,6 +27,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  */
 public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
 
+    public static final Object entityForAttr = new Object();
     private Map<Object,Map<String,AttributeDefinition>> applicationCache;
     
     public AttributeCacheManagerImpl() {
@@ -117,32 +111,30 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
     }
     
     public synchronized void addAttributeToCacheForAttributes(AttributeDefinition attribute) {
-        String key = new String("Perun");
-        if (applicationCache.get(key)!=null) {
-            applicationCache.get(key).put(attribute.getName(), attribute);
+        if (applicationCache.get(entityForAttr)!=null) {
+            applicationCache.get(entityForAttr).put(attribute.getName(), attribute);
         }
         else {
             Map<String,AttributeDefinition> mapOfAttributes = new HashMap<>();
             mapOfAttributes.put(attribute.getName(), attribute);
-            applicationCache.put(key, mapOfAttributes);
+            applicationCache.put(entityForAttr, mapOfAttributes);
         }
     }
     
     public void addAttributeToCacheForAttributesInTransaction(AttributeDefinition attribute) {
-        String key = new String("Perun");
         if(TransactionSynchronizationManager.isActualTransactionActive()) {
             Map<Object,Map<String,AttributeDefinition>> actionsInTransaction = (Map<Object,Map<String,AttributeDefinition>>) TransactionSynchronizationManager.getResource(this);
             if(actionsInTransaction == null) {
                 actionsInTransaction = new HashMap<Object, Map<String, AttributeDefinition>>();
                 TransactionSynchronizationManager.bindResource(this, actionsInTransaction);
             }
-            if (actionsInTransaction.get(key)!=null) {
-                actionsInTransaction.get(key).put(attribute.getName(), attribute);
+            if (actionsInTransaction.get(entityForAttr)!=null) {
+                actionsInTransaction.get(entityForAttr).put(attribute.getName(), attribute);
             }
             else {
                 Map<String, AttributeDefinition> mapOfAttributes = new HashMap<>();
                 mapOfAttributes.put(attribute.getName(), attribute);
-                actionsInTransaction.put(key, mapOfAttributes);
+                actionsInTransaction.put(entityForAttr, mapOfAttributes);
             }
         } else {
             this.addAttributeToCacheForAttributes(attribute);
@@ -351,14 +343,12 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
     }
     
     public void removeAttributeFromCacheForAttributes(AttributeDefinition attribute) {
-        String key = new String("Perun");
-        if (applicationCache.get(key)!=null) {
-           applicationCache.get(key).remove(attribute.getName());
+        if (applicationCache.get(entityForAttr)!=null) {
+           applicationCache.get(entityForAttr).remove(attribute.getName());
         }
     }
     
     public void removeAttributeFromCacheForAttributesInTransaction(AttributeDefinition attribute) {
-        String key = new String("Perun");
         if(TransactionSynchronizationManager.isActualTransactionActive()) {
             Map<Object,Map<String,AttributeDefinition>> actionsInTransaction = (Map<Object,Map<String,AttributeDefinition>>) TransactionSynchronizationManager.getResource(this);
             if(actionsInTransaction == null) {
@@ -367,13 +357,13 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
             }
             Attribute newAttribute = new Attribute(attribute);
             newAttribute.setValue(null);
-            if (actionsInTransaction.get(key)!=null) {
-                actionsInTransaction.get(key).put(attribute.getName(), newAttribute);
+            if (actionsInTransaction.get(entityForAttr)!=null) {
+                actionsInTransaction.get(entityForAttr).put(attribute.getName(), newAttribute);
             }
             else {
                 Map<String, AttributeDefinition> mapOfAttributeHoldersAttributes = new HashMap<>();
                 mapOfAttributeHoldersAttributes.put(attribute.getName(), newAttribute);
-                actionsInTransaction.put(key, mapOfAttributeHoldersAttributes);
+                actionsInTransaction.put(entityForAttr, mapOfAttributeHoldersAttributes);
             }
         } else {
             this.removeAttributeFromCacheForAttributes(attribute);
@@ -514,12 +504,11 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
     }
     
     public AttributeDefinition getAttributeFromCacheForAttributes(String attributeName) {
-        String key = new String("Perun");
-        if (applicationCache.get(key)==null) {
+        if (applicationCache.get(entityForAttr)==null) {
             return null;
         }
         Map<String,AttributeDefinition> mapOfAttributes = new HashMap<>();
-        mapOfAttributes = applicationCache.get(key);
+        mapOfAttributes = applicationCache.get(entityForAttr);
         if (mapOfAttributes.get(attributeName) == null) {
             return null;
         }
@@ -528,12 +517,11 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
     }
     
     public AttributeDefinition getAttributeFromCacheForAttributesInTransaction(String attributeName) {
-        String key = new String("Perun");
         if(TransactionSynchronizationManager.isActualTransactionActive()) {
             Map<Object,Map<String,AttributeDefinition>> actionsInTransaction = (Map<Object,Map<String,AttributeDefinition>>) TransactionSynchronizationManager.getResource(this);
             if (actionsInTransaction!=null) {
-                if ((actionsInTransaction.get(key))!=null) {
-                    AttributeDefinition attribute = new AttributeDefinition(actionsInTransaction.get(key).get(attributeName));
+                if ((actionsInTransaction.get(entityForAttr))!=null) {
+                    AttributeDefinition attribute = new AttributeDefinition(actionsInTransaction.get(entityForAttr).get(attributeName));
                     if (attribute!=null) {
                         return attribute;
                     }
@@ -544,12 +532,11 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
     }
     
     public AttributeDefinition getAttributeByIdFromCacheForAttributes(int id) {
-        String key = new String("Perun");
-        if (applicationCache.get(key)==null) {
+        if (applicationCache.get(entityForAttr)==null) {
             return null;
         }
         Map<String,AttributeDefinition> mapOfAttributes = new HashMap<>();
-        mapOfAttributes = applicationCache.get(key);
+        mapOfAttributes = applicationCache.get(entityForAttr);
         for (AttributeDefinition attribute: mapOfAttributes.values()) {
             if (attribute.getId() == id) {
                 return new AttributeDefinition(attribute);
@@ -559,13 +546,12 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
     }
     
     public AttributeDefinition getAttributeByIdFromCacheForAttributesInTransaction(int id) {
-        String key = new String("Perun");
         if(TransactionSynchronizationManager.isActualTransactionActive()) {
             Map<Object,Map<String,AttributeDefinition>> actionsInTransaction = (Map<Object,Map<String,AttributeDefinition>>) TransactionSynchronizationManager.getResource(this);
             if (actionsInTransaction!=null) {
-                if ((actionsInTransaction.get(key))!=null) {
+                if ((actionsInTransaction.get(entityForAttr))!=null) {
                     Map<String,AttributeDefinition> mapOfAttributes = new HashMap<>();
-                    mapOfAttributes = applicationCache.get(key);
+                    mapOfAttributes = applicationCache.get(entityForAttr);
                     for (AttributeDefinition attribute: mapOfAttributes.values()) {
                         if (attribute.getId() == id) {
                             return new AttributeDefinition(attribute);
@@ -601,33 +587,35 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
                     }
                 }
             }
-            if (object instanceof String) {
-                String key = (String) object;
-                if (key.equals("Perun")) {
+            else { 
+                if (object instanceof String) {
+                    String key = (String) object;
                     Map<String, AttributeDefinition> mapOfAttributeHoldersAttributes = actionsInTransaction.get(key);
                     for(String attributeName: mapOfAttributeHoldersAttributes.keySet()) {
-                        if (mapOfAttributeHoldersAttributes.get(attributeName) instanceof Attribute) {
                             Attribute attribute = new Attribute(mapOfAttributeHoldersAttributes.get(attributeName));
                             if (attribute.getValue()==null) {
-                                this.removeAttributeFromCacheForAttributes(mapOfAttributeHoldersAttributes.get(attributeName));
+                                this.removeAttributeFromCacheForString(key, mapOfAttributeHoldersAttributes.get(attributeName));
                             }
-                        }
-                        else {
-                            this.addAttributeToCacheForAttributes(mapOfAttributeHoldersAttributes.get(attributeName));
-                        }
+                            else {
+                                this.addAttributeToCacheForString(key, attribute);
+                            }
                     }
                 }
                 else {
-                    Map<String, AttributeDefinition> mapOfAttributeHoldersAttributes = actionsInTransaction.get(key);
-                    for(String attributeName: mapOfAttributeHoldersAttributes.keySet()) {
-                    Attribute attribute = new Attribute(mapOfAttributeHoldersAttributes.get(attributeName));
-                    if (attribute.getValue()==null) {
-                        this.removeAttributeFromCacheForString(key, mapOfAttributeHoldersAttributes.get(attributeName));
-                    }
-                    else {
-                        this.addAttributeToCacheForString(key, attribute);
-                    }
-                }
+                    if (object.equals(entityForAttr)) {
+                            Map<String, AttributeDefinition> mapOfAttributeHoldersAttributes = actionsInTransaction.get(entityForAttr);
+                            for(String attributeName: mapOfAttributeHoldersAttributes.keySet()) {
+                                if (mapOfAttributeHoldersAttributes.get(attributeName) instanceof Attribute) {
+                                    Attribute attribute = new Attribute(mapOfAttributeHoldersAttributes.get(attributeName));
+                                    if (attribute.getValue()==null) {
+                                        this.removeAttributeFromCacheForAttributes(mapOfAttributeHoldersAttributes.get(attributeName));
+                                    }
+                                }
+                                else {
+                                    this.addAttributeToCacheForAttributes(mapOfAttributeHoldersAttributes.get(attributeName));
+                                }
+                            }
+                     }
                 }
             }
         }
