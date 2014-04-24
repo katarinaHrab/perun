@@ -276,4 +276,15 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             AttributeDefinition attributeFromCache = attributeCacheManagerImpl.getAttributeByIdFromCacheForAttributes(attributeDefinition1.getId());
             assertEquals(attributeDefinition1, attributeFromCache);
         }
+        
+       @Test
+       public void getAttributeFromCacheForReverseEntities() {
+            System.out.println("attributeCacheManagerImpl.getAttributeFromCacheForReverseEntities");
+            AttributeHolders attributeHolders = new AttributeHolders(user1, facility1);
+            AttributeHolders attributeHoldersReverse = new AttributeHolders(facility1, user1);
+            attributeCacheManagerImpl.addAttributeToCache(attributeHolders, attribute1);
+            Attribute attributeFromCache = new Attribute();
+            attributeFromCache = attributeCacheManagerImpl.getAttributeFromCache(attributeHoldersReverse, attribute1.getName());
+            assertEquals(attribute1, attributeFromCache);
+        }
 }

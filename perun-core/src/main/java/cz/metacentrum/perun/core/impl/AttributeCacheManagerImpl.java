@@ -247,7 +247,9 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
             if (object instanceof AttributeHolders) {
                 AttributeHolders attributeHolders = (AttributeHolders) object;
                 if (attributeHolders.getSecondary()!=null) {
-                    if ((attributeHolders.getSecondary().equals(secondaryHolder)) && (attributeHolders.getPrimary() instanceof User)) {
+                    boolean rightEquals = ((attributeHolders.getSecondary().equals(secondaryHolder)) && (attributeHolders.getPrimary() instanceof User));
+                    boolean reverseEquals = ((attributeHolders.getPrimary().equals(secondaryHolder)) && (attributeHolders.getSecondary() instanceof User));
+                    if  (rightEquals || reverseEquals) {
                         this.removeAllAttributesFromCache(attributeHolders);
                     }
                 }
@@ -266,7 +268,9 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
                 if (object instanceof AttributeHolders) {
                     AttributeHolders attributeHolders = (AttributeHolders) object;
                     if (attributeHolders.getSecondary()!=null) {
-                        if ((attributeHolders.getSecondary().equals(secondaryHolder)) && (attributeHolders.getPrimary() instanceof User)) {
+                        boolean rightEquals = ((attributeHolders.getSecondary().equals(secondaryHolder)) && (attributeHolders.getPrimary() instanceof User));
+                        boolean reverseEquals = ((attributeHolders.getPrimary().equals(secondaryHolder)) && (attributeHolders.getSecondary() instanceof User));
+                        if (rightEquals || reverseEquals) {
                                 if (actionsInTransaction.get(attributeHolders)!=null) {
                                     for (AttributeDefinition attributeDef: applicationCache.get(attributeHolders).values()) {
                                     Attribute attribute = (Attribute) attributeDef;
@@ -297,7 +301,9 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
             if (object instanceof AttributeHolders) {
                 AttributeHolders attributeHolders = (AttributeHolders) object;
                 if (attributeHolders.getSecondary()!=null) {
-                    if ((attributeHolders.getPrimary().equals(primaryHolder)) && (attributeHolders.getSecondary() instanceof Facility)) {
+                    boolean rightEquals = ((attributeHolders.getPrimary().equals(primaryHolder)) && (attributeHolders.getSecondary() instanceof Facility));
+                    boolean reverseEquals = ((attributeHolders.getSecondary().equals(primaryHolder)) && (attributeHolders.getPrimary() instanceof Facility));
+                    if  (rightEquals || reverseEquals) {
                         this.removeAllAttributesFromCache(attributeHolders);
                     }
                 }
@@ -316,7 +322,9 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
                 if (object instanceof AttributeHolders) {
                     AttributeHolders attributeHolders = (AttributeHolders) object;
                     if (attributeHolders.getSecondary()!=null) {
-                        if ((attributeHolders.getPrimary().equals(primaryHolder)) && (attributeHolders.getSecondary() instanceof Facility)) {
+                        boolean rightEquals = ((attributeHolders.getPrimary().equals(primaryHolder)) && (attributeHolders.getSecondary() instanceof Facility));
+                        boolean reverseEquals = ((attributeHolders.getSecondary().equals(primaryHolder)) && (attributeHolders.getPrimary() instanceof Facility));
+                        if (rightEquals || reverseEquals) {
                                 if (actionsInTransaction.get(attributeHolders)!=null) {
                                     for (AttributeDefinition attributeDef: applicationCache.get(attributeHolders).values()) {
                                     Attribute attribute = (Attribute) attributeDef;

@@ -54,8 +54,11 @@ public class AttributeHolders {
         if (getSecondary()==null) {
             return this.getPrimary().equals(attrHolders.getPrimary());
         }
-        return ((this.getPrimary().equals(attrHolders.getPrimary())) && 
+        boolean rightEquals = ((this.getPrimary().equals(attrHolders.getPrimary())) && 
                 (this.getSecondary().equals(attrHolders.getSecondary())));
+        boolean reverseEquals = ((this.getPrimary().equals(attrHolders.getSecondary())) && 
+                (this.getSecondary().equals(attrHolders.getPrimary())));
+        return (rightEquals || reverseEquals);
     }
     
     @Override 
