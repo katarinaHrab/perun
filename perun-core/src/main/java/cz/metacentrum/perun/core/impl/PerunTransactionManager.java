@@ -10,13 +10,14 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import cz.metacentrum.perun.core.impl.Auditer;
 import cz.metacentrum.perun.core.impl.AuditerMessage;
+import cz.metacentrum.perun.core.implApi.AttributeCacheManagerImplApi;
 
 public class PerunTransactionManager extends DataSourceTransactionManager implements ResourceTransactionManager, InitializingBean {
 
   private static final long serialVersionUID = 1L;
 
   private Auditer auditer;
-  private AttributeCacheManagerImpl cacheManager;
+  private AttributeCacheManagerImplApi cacheManager;
 
   @Override
   protected Object doSuspend(Object transaction) {
@@ -66,11 +67,11 @@ public class PerunTransactionManager extends DataSourceTransactionManager implem
     this.auditer = auditer;
   }
 
-  public AttributeCacheManagerImpl getCacheManager() {
+  public AttributeCacheManagerImplApi getCacheManager() {
       return this.cacheManager;
   }
   
-  public void setCacheManager(AttributeCacheManagerImpl cacheManager) {
+  public void setCacheManager(AttributeCacheManagerImplApi cacheManager) {
       this.cacheManager = cacheManager;
   }
 } 

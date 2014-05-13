@@ -11,6 +11,17 @@ import cz.metacentrum.perun.core.api.AttributeHolders;
 import cz.metacentrum.perun.core.api.AttributesManager;
 import cz.metacentrum.perun.core.api.User;
 import cz.metacentrum.perun.core.api.Facility;
+import cz.metacentrum.perun.core.api.Perun;
+import cz.metacentrum.perun.core.api.exceptions.AttributeExistsException;
+import cz.metacentrum.perun.core.api.exceptions.AttributeNotExistsException;
+import cz.metacentrum.perun.core.api.exceptions.InternalErrorException;
+import cz.metacentrum.perun.core.api.exceptions.PrivilegeException;
+import cz.metacentrum.perun.core.api.exceptions.UserNotExistsException;
+import cz.metacentrum.perun.core.api.exceptions.WrongAttributeAssignmentException;
+import cz.metacentrum.perun.core.api.exceptions.WrongAttributeValueException;
+import cz.metacentrum.perun.core.api.exceptions.WrongReferenceAttributeValueException;
+import cz.metacentrum.perun.core.bl.PerunBl;
+import cz.metacentrum.perun.core.blImpl.PerunBlImpl;
 import cz.metacentrum.perun.core.implApi.AttributeCacheManagerImplApi;
 import cz.metacentrum.perun.core.implApi.AttributesManagerImplApi;
 import java.util.ArrayList;
@@ -21,6 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import sun.jdbc.odbc.ee.DataSource;
 
 
 /**
@@ -28,8 +40,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author Katarína Hrabovská
  */
 public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
-        @Autowired
-    	protected AttributesManagerImplApi attributesManagerImpl;
+        
+    
         
         private AttributeCacheManagerImpl attributeCacheManagerImpl = new AttributeCacheManagerImpl();
 
@@ -48,14 +60,7 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
         private String key1;
         private String key2;
 
-    public AttributesManagerImplApi getAttributesManagerImplApi() {
-        return attributesManagerImpl;
-    }
-
-    public void setAttributesManagerImplApi(AttributesManagerImplApi attributesManagerImpl) {
-        this.attributesManagerImpl = attributesManagerImpl;
-    }
-
+   
     
         
     @Before
@@ -63,8 +68,9 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             this.setUpWorld();
     }
     
-    public void setUpWorld() throws Exception {
-   
+    public void setUpWorld() throws Exception {                
+                
+                        
                 //Set users
                 user1 = new User();
                 user2 = new User();
@@ -82,6 +88,8 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
                 attribute1.setFriendlyName("name1");
                 attribute1.setValue(1);
                 attribute1.setId(111);
+              
+                
                 
                 attribute2 = new Attribute();
                 attribute2.setNamespace(AttributesManager.NS_USER_ATTR_DEF);
@@ -99,6 +107,7 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
                 attributeDefinition1.setNamespace(AttributesManager.NS_USER_ATTR_DEF);
                 attributeDefinition1.setFriendlyName("definitionName1");
                 attributeDefinition1.setId(11);
+                
                 
                 attributeDefinition2 = new AttributeDefinition();
                 attributeDefinition2.setNamespace(AttributesManager.NS_USER_ATTR_DEF);
@@ -287,4 +296,17 @@ public class ApplicationCacheTest extends AbstractPerunIntegrationTest {
             attributeFromCache = attributeCacheManagerImpl.getAttributeFromCache(attributeHoldersReverse, attribute1.getName());
             assertEquals(attribute1, attributeFromCache);
         }
+       
+    /*   @Test
+       public void createAndGetAttributeDefinitionTest() throws PrivilegeException, InternalErrorException, AttributeExistsException, AttributeNotExistsException {
+           System.out.println("attributeCacheManagerImpl.veryStupidTest");
+           attributeDefinition1.setType(String.class.getName());
+           perun.getAttributesManagerBl().createAttribute(sess, attributeDefinition1);
+           AttributeDefinition attributeDef = perun.getAttributesManagerBl().getAttributeDefinition(sess, attributeDefinition1.getName());
+           AttributeDefinition attributeDefFromCache = perun.getAttributesManagerBl().getCacheManager().getAttributeFromCacheForAttributesInTransaction(attributeDefinition1.getName());
+           assertEquals(attributeDef, attributeDefinition1);
+           assertEquals(attributeDefFromCache, attributeDefinition1);
+         
+       } */
+      
 }

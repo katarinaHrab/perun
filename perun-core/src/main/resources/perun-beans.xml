@@ -230,6 +230,7 @@ http://www.springframework.org/schema/task http://www.springframework.org/schema
     </bean>
     <bean id="attributesManagerImpl" class="cz.metacentrum.perun.core.impl.AttributesManagerImpl" scope="singleton" init-method="initialize">
         <property name="perun" ref="perun"/>
+        <property name="cacheManager" ref="attributeCacheManagerImpl"/>
         <constructor-arg ref="dataSource" />
     </bean>
     <bean id="servicesManagerImpl" class="cz.metacentrum.perun.core.impl.ServicesManagerImpl" scope="singleton">
@@ -251,6 +252,9 @@ http://www.springframework.org/schema/task http://www.springframework.org/schema
     
     <bean id="synchronizer" class="cz.metacentrum.perun.core.impl.Synchronizer" scope="singleton"> 
         <constructor-arg ref="perun" />
+    </bean>
+    
+    <bean id="attributeCacheManagerImpl" class="cz.metacentrum.perun.core.impl.AttributeCacheManagerImpl" scope="singleton"> 
     </bean>
 
     <!-- this bean is only for test -->

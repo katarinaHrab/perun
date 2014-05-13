@@ -28,6 +28,7 @@ import cz.metacentrum.perun.core.api.exceptions.WrongAttributeAssignmentExceptio
 import cz.metacentrum.perun.core.api.exceptions.WrongAttributeValueException;
 import cz.metacentrum.perun.core.api.exceptions.WrongModuleTypeException;
 import cz.metacentrum.perun.core.api.exceptions.WrongReferenceAttributeValueException;
+import cz.metacentrum.perun.core.impl.AttributeCacheManagerImpl;
 import cz.metacentrum.perun.core.implApi.modules.attributes.UserVirtualAttributesModuleImplApi;
 import java.util.Map;
 
@@ -37,6 +38,14 @@ import java.util.Map;
  */
 public interface AttributesManagerImplApi {
 
+    
+  /**
+   * Get manager of cache.
+   * 
+   * @return cacheManager
+   */ 
+  AttributeCacheManagerImplApi getCacheManager();
+    
   /**
    * Get all <b>non-empty</b> attributes associated with the facility.
    * 

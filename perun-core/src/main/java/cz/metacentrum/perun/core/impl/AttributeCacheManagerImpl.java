@@ -397,9 +397,8 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
             Map<Object,Map<String,AttributeDefinition>> actionsInTransaction = (Map<Object,Map<String,AttributeDefinition>>) TransactionSynchronizationManager.getResource(this);
             if (actionsInTransaction!=null) {
                 if ((actionsInTransaction.get(attributeHolders))!=null) {
-                    Attribute attribute = new Attribute((Attribute)actionsInTransaction.get(attributeHolders).get(attributeName));
-                    if (attribute!=null) {
-                        return attribute;
+                    if (actionsInTransaction.get(attributeHolders).get(attributeName)!=null) {
+                        return new Attribute((Attribute)actionsInTransaction.get(attributeHolders).get(attributeName));
                     }
                 }
             }
@@ -429,9 +428,8 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
             Map<Object,Map<String,AttributeDefinition>> actionsInTransaction = (Map<Object,Map<String,AttributeDefinition>>) TransactionSynchronizationManager.getResource(this);
             if (actionsInTransaction!=null) {
                 if ((actionsInTransaction.get(key))!=null) {
-                    Attribute attribute = new Attribute((Attribute)actionsInTransaction.get(key).get(attributeName));
-                    if (attribute!=null) {
-                        return attribute;
+                    if (actionsInTransaction.get(key).get(attributeName)!=null) {
+                        return new Attribute((Attribute)actionsInTransaction.get(key).get(attributeName));
                     }
                 }
             }
@@ -529,9 +527,8 @@ public class AttributeCacheManagerImpl implements AttributeCacheManagerImplApi{
             Map<Object,Map<String,AttributeDefinition>> actionsInTransaction = (Map<Object,Map<String,AttributeDefinition>>) TransactionSynchronizationManager.getResource(this);
             if (actionsInTransaction!=null) {
                 if ((actionsInTransaction.get(entityForAttributes))!=null) {
-                    AttributeDefinition attribute = new AttributeDefinition(actionsInTransaction.get(entityForAttributes).get(attributeName));
-                    if (attribute!=null) {
-                        return attribute;
+                    if (actionsInTransaction.get(entityForAttributes).get(attributeName)!=null) {
+                        return new AttributeDefinition(actionsInTransaction.get(entityForAttributes).get(attributeName));
                     }
                 }
             }

@@ -79,6 +79,7 @@ import cz.metacentrum.perun.core.api.exceptions.WrongReferenceAttributeValueExce
 
 import cz.metacentrum.perun.core.api.exceptions.rt.ConsistencyErrorRuntimeException;
 import cz.metacentrum.perun.core.api.exceptions.rt.InternalErrorRuntimeException;
+import cz.metacentrum.perun.core.implApi.AttributeCacheManagerImplApi;
 
 import cz.metacentrum.perun.core.implApi.AttributesManagerImplApi;
 
@@ -130,7 +131,7 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
     private ClassLoader classLoader = this.getClass().getClassLoader();
     private NamedParameterJdbcTemplate  namedParameterJdbcTemplate;
     
-    private AttributeCacheManagerImpl cacheManager = new AttributeCacheManagerImpl();
+    private AttributeCacheManagerImplApi cacheManager = new AttributeCacheManagerImpl();
 
     
     //Attributes modules.  name => module
@@ -152,7 +153,14 @@ public class AttributesManagerImpl implements AttributesManagerImplApi {
           lobHandler = new DefaultLobHandler();
         }
     }
-
+    
+   public AttributeCacheManagerImplApi getCacheManager() {
+       return this.cacheManager;
+   }
+   
+   public void setCacheManager(AttributeCacheManagerImplApi cacheManager) {
+      this.cacheManager = cacheManager;
+  }
     
     
     protected final static String attributeDefinitionMappingSelectQuery = "attr_names.id as attr_names_id, attr_names.friendly_name as attr_names_friendly_name, " +
